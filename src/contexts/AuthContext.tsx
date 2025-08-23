@@ -13,6 +13,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isDarkMode: boolean;
+  toggleTheme: () => void;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
@@ -35,9 +37,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     loadStoredAuth();
+    loadTheme();
   }, []);
 
   const loadStoredAuth = async () => {
@@ -53,6 +57,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Error loading stored auth:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadTheme = async () => {
+    try {
+      const theme = await AsyncStorage.getItem('theme');
+      setIsDarkMode(theme === 'dark');
+    } catch (error) {
+      console.error('Error loading theme:', error);
+    }
+  };
+
+  const toggleTheme = async () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    try {
+      await AsyncStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    } catch (error) {
+      console.error('Error saving theme:', error);
     }
   };
 
@@ -72,7 +95,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         
-        // Store token and user data
         await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user', JSON.stringify(data.user_data));
         
@@ -111,6 +133,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     token,
     isLoading,
+    isDarkMode,
+    toggleTheme,
     login,
     logout,
   };

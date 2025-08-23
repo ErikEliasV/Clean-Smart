@@ -16,7 +16,7 @@ const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isDarkMode } = useAuth();
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -34,31 +34,37 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <KeyboardAvoidingView 
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View className="flex-1 justify-center px-6">
-          {/* Header */}
           <View className="items-center mb-12">
-            <View className="w-20 h-20 bg-senac-blue rounded-2xl items-center justify-center mb-6 shadow-lg shadow-senac-blue/20">
-              <Text className="text-white text-3xl font-bold">S</Text>
+            <View className="w-24 h-24 bg-senac-blue rounded-3xl items-center justify-center mb-8 shadow-2xl shadow-senac-blue/30">
+              <Text className="text-white text-4xl font-black">S</Text>
             </View>
-            <Text className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo</Text>
-            <Text className="text-gray-500 text-center text-base leading-6">
+            <Text className={`text-4xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Bem-vindo
+            </Text>
+            <Text className={`text-center text-lg leading-7 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Entre com suas credenciais para acessar o sistema
             </Text>
           </View>
 
-          {/* Form */}
-          <View className="mb-12">
-            <View className="mb-5">
-              <Text className="text-gray-900 text-base font-semibold mb-2">Usuário</Text>
+          <View className="mb-12 space-y-6">
+            <View>
+              <Text className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Usuário
+              </Text>
               <TextInput
-                className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-900 text-base shadow-sm"
+                className={`border-2 rounded-2xl px-5 py-5 text-lg font-medium shadow-lg ${
+                  isDarkMode 
+                    ? 'bg-gray-800 border-gray-700 text-white' 
+                    : 'bg-white border-gray-200 text-gray-900'
+                }`}
                 placeholder="Digite seu usuário"
-                placeholderTextColor="#8E8E93"
+                placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -67,12 +73,18 @@ const LoginScreen: React.FC = () => {
               />
             </View>
 
-            <View className="mb-5">
-              <Text className="text-gray-900 text-base font-semibold mb-2">Senha</Text>
+            <View>
+              <Text className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Senha
+              </Text>
               <TextInput
-                className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-900 text-base shadow-sm"
+                className={`border-2 rounded-2xl px-5 py-5 text-lg font-medium shadow-lg ${
+                  isDarkMode 
+                    ? 'bg-gray-800 border-gray-700 text-white' 
+                    : 'bg-white border-gray-200 text-gray-900'
+                }`}
                 placeholder="Digite sua senha"
-                placeholderTextColor="#8E8E93"
+                placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -83,14 +95,17 @@ const LoginScreen: React.FC = () => {
             </View>
 
             <TouchableOpacity
-              className={`bg-senac-blue rounded-xl py-4 items-center mt-2 shadow-lg shadow-senac-blue/20 ${isLoading ? 'opacity-60' : ''}`}
+              className={`rounded-2xl py-5 items-center mt-4 shadow-2xl shadow-senac-blue/30 ${
+                isLoading ? 'opacity-60' : 'opacity-100'
+              }`}
+              style={{ backgroundColor: '#0066CC' }}
               onPress={handleLogin}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="white" size="small" />
+                <ActivityIndicator color="white" size="large" />
               ) : (
-                <Text className="text-white text-lg font-semibold">Entrar</Text>
+                <Text className="text-white text-xl font-bold">Entrar</Text>
               )}
             </TouchableOpacity>
           </View>

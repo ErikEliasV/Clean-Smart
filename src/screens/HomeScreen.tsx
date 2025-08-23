@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'r
 import { useAuth } from '../contexts/AuthContext';
 
 const HomeScreen: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isDarkMode, toggleTheme } = useAuth();
 
   const handleLogout = () => {
     Alert.alert(
@@ -24,14 +24,23 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
-
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} items-center justify-center`}>
+          
+              <TouchableOpacity
+                onPress={toggleTheme}
+                className={`w-24 h-12 rounded-full items-center justify-center ${
+                  isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                }`}
+              >
+                <Text className="text-2xl text-red-500">{isDarkMode ? 'Dark' : 'Ligth'}</Text>
+              </TouchableOpacity>
+              
       <View className="p-5 pb-4 w-full">
         <TouchableOpacity
-          className="bg-red-500 rounded-xl py-4 items-center shadow-lg shadow-red-500/20"
+          className="  bg-red-500 rounded-2xl py-5 items-center shadow-2xl shadow-red-500/30"
           onPress={handleLogout}
         >
-          <Text className="text-white text-lg font-semibold">Sair</Text>
+          <Text className="text-white text-xl font-bold">Sair</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
