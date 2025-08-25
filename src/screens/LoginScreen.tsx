@@ -9,13 +9,17 @@ import {
   Platform,
   ActivityIndicator,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { Eye, EyeOff, Lock, User } from 'lucide-react-native';
+import { SENAC_COLORS } from '../constants/colors';
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, isDarkMode } = useAuth();
 
   const handleLogin = async () => {
@@ -41,71 +45,93 @@ const LoginScreen: React.FC = () => {
       >
         <View className="flex-1 justify-center px-6">
           <View className="items-center mb-12">
-            <View className="w-24 h-24 bg-senac-blue rounded-3xl items-center justify-center mb-8 shadow-2xl shadow-senac-blue/30">
-              <Text className="text-white text-4xl font-black">S</Text>
-            </View>
-            <Text className={`text-4xl font-black mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <Image source={require('../../assets/images/logo.png')} className="w-64 h-44 mb-8" />
+            <Text className={`text-3xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Bem-vindo
             </Text>
-            <Text className={`text-center text-lg leading-7 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <Text className={`text-center text-base leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Entre com suas credenciais para acessar o sistema
             </Text>
           </View>
 
           <View className="mb-12 space-y-6">
             <View>
-              <Text className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Usuário
               </Text>
-              <TextInput
-                className={`border-2 rounded-2xl px-5 py-5 text-lg font-medium shadow-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-white border-gray-200 text-gray-900'
-                }`}
-                placeholder="Digite seu usuário"
-                placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-              />
+              <View className="relative">
+                <TextInput
+                  className={`border border-gray-300/30 rounded-2xl px-4 py-4 text-base font-medium ${
+                    isDarkMode 
+                      ? 'bg-gray-800/50 border-gray-600/30 text-white' 
+                      : 'bg-white/80 border-gray-200/30 text-gray-900'
+                  } backdrop-blur-sm pl-12`}
+                  placeholder="Digite seu usuário"
+                  placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoading}
+                />
+                <User 
+                  size={20} 
+                  color={SENAC_COLORS.primary} 
+                  style={{ position: 'absolute', left: 16, top: 16 }}
+                />
+              </View>
             </View>
 
             <View>
-              <Text className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Senha
               </Text>
-              <TextInput
-                className={`border-2 rounded-2xl px-5 py-5 text-lg font-medium shadow-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-white border-gray-200 text-gray-900'
-                }`}
-                placeholder="Digite sua senha"
-                placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-              />
+              <View className="relative">
+                <TextInput
+                  className={`border border-gray-300/30 rounded-2xl px-4 py-4 text-base font-medium ${
+                    isDarkMode 
+                      ? 'bg-gray-800/50 border-gray-600/30 text-white' 
+                      : 'bg-white/80 border-gray-200/30 text-gray-900'
+                  } backdrop-blur-sm pl-12 pr-12`}
+                  placeholder="Digite sua senha"
+                  placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoading}
+                />
+                <Lock 
+                  size={20} 
+                  color={SENAC_COLORS.primary} 
+                  style={{ position: 'absolute', left: 16, top: 16 }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: 16, top: 16 }}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color={SENAC_COLORS.primary} />
+                  ) : (
+                    <Eye size={20} color={SENAC_COLORS.primary} />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity
-              className={`rounded-2xl py-5 items-center mt-4 shadow-2xl shadow-senac-blue/30 ${
+              className={`rounded-2xl py-4 items-center mt-8 ${
                 isLoading ? 'opacity-60' : 'opacity-100'
               }`}
-              style={{ backgroundColor: '#0066CC' }}
+              style={{ backgroundColor: SENAC_COLORS.primary }}
               onPress={handleLogin}
               disabled={isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="white" size="large" />
               ) : (
-                <Text className="text-white text-xl font-bold">Entrar</Text>
+                <Text className="text-white text-lg font-semibold">Entrar</Text>
               )}
             </TouchableOpacity>
           </View>
