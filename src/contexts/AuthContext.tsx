@@ -9,6 +9,21 @@ interface User {
   is_superuser: boolean;
 }
 
+interface CreateUserData {
+  username: string;
+  password: string;
+  confirm_password: string;
+  email?: string;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+}
+
+interface ChangePasswordData {
+  old_password: string;
+  new_password: string;
+  confirm_new_password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -17,6 +32,10 @@ interface AuthContextType {
   toggleTheme: () => void;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  getCurrentUser: () => Promise<{ success: boolean; user?: User; error?: string }>;
+  listUsers: () => Promise<{ success: boolean; users?: User[]; error?: string }>;
+  createUser: (userData: CreateUserData) => Promise<{ success: boolean; user?: User; error?: string }>;
+  changePassword: (passwordData: ChangePasswordData) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -129,6 +148,141 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const getCurrentUser = async (): Promise<{ success: boolean; user?: User; error?: string }> => {
+    if (!token) {
+      return { success: false, error: 'Token não encontrado' };
+    }
+
+    try {
+      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/current_user/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        return { success: true, user: userData };
+      } else {
+        const errorData = await response.json();
+        return { 
+          success: false, 
+          error: errorData.message || 'Erro ao obter dados do usuário' 
+        };
+      }
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return { 
+        success: false, 
+        error: 'Erro de conexão. Verifique sua internet.' 
+      };
+    }
+  };
+
+  const listUsers = async (): Promise<{ success: boolean; users?: User[]; error?: string }> => {
+    if (!token) {
+      return { success: false, error: 'Token não encontrado' };
+    }
+
+    try {
+      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/list_users/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const users = await response.json();
+        return { success: true, users };
+      } else {
+        const errorData = await response.json();
+        return { 
+          success: false, 
+          error: errorData.message || 'Erro ao listar usuários' 
+        };
+      }
+    } catch (error) {
+      console.error('List users error:', error);
+      return { 
+        success: false, 
+        error: 'Erro de conexão. Verifique sua internet.' 
+      };
+    }
+  };
+
+  const createUser = async (userData: CreateUserData): Promise<{ success: boolean; user?: User; error?: string }> => {
+    if (!token) {
+      return { success: false, error: 'Token não encontrado' };
+    }
+
+    try {
+      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/create_user/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { success: true, user: data.user };
+      } else {
+        const errorData = await response.json();
+        return { 
+          success: false, 
+          error: errorData.message || 'Erro ao criar usuário' 
+        };
+      }
+    } catch (error) {
+      console.error('Create user error:', error);
+      return { 
+        success: false, 
+        error: 'Erro de conexão. Verifique sua internet.' 
+      };
+    }
+  };
+
+  const changePassword = async (passwordData: ChangePasswordData): Promise<{ success: boolean; error?: string }> => {
+    if (!token) {
+      return { success: false, error: 'Token não encontrado' };
+    }
+
+    try {
+      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/change_password/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      if (response.ok) {
+        return { success: true };
+      } else {
+        const errorData = await response.json();
+        return { 
+          success: false, 
+          error: errorData.message || 'Erro ao alterar senha' 
+        };
+      }
+    } catch (error) {
+      console.error('Change password error:', error);
+      return { 
+        success: false, 
+        error: 'Erro de conexão. Verifique sua internet.' 
+      };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -137,6 +291,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     toggleTheme,
     login,
     logout,
+    getCurrentUser,
+    listUsers,
+    createUser,
+    changePassword,
   };
 
   return (
