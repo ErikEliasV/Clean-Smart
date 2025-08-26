@@ -4,12 +4,12 @@ import {
   Text,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
   ScrollView,
   TextInput,
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
@@ -121,7 +121,7 @@ const UserManagementScreen: React.FC = () => {
 
   if (!isAdmin) {
     return (
-      <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
         <View className="flex-1 justify-center items-center px-6">
           <Shield size={64} color={isDarkMode ? '#EF4444' : '#DC2626'} />
           <Text className={`text-xl font-bold mt-4 text-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -136,7 +136,7 @@ const UserManagementScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
       <View className="flex-1 px-6">
 
         <View className="flex-row items-center justify-between py-6">

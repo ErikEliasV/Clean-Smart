@@ -11,6 +11,7 @@ export type ProfileStackParamList = {
 };
 
 export type TabParamList = {
+  Salas: undefined;
   Home: undefined;
   Profile: undefined;
 };

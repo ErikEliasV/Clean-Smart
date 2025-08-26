@@ -1,6 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { useSalas } from '../contexts/SalasContext';
 import { 
   User, 
   Lock, 
@@ -10,12 +12,24 @@ import {
   Shield,
   Crown,
   Building,
-  Bell
+  Bell,
+  CheckCircle,
+  Clock,
+  BarChart3
 } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
 
-const HomeScreen: React.FC = () => {
+const InformationScreen: React.FC = () => {
   const { user, logout, isDarkMode, toggleTheme } = useAuth();
+  const { salas, listSalas, isLoading } = useSalas();
+
+  useEffect(() => {
+    loadSalasData();
+  }, []);
+
+  const loadSalasData = async () => {
+    await listSalas();
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -35,10 +49,28 @@ const HomeScreen: React.FC = () => {
     );
   };
 
+  const salasStats = {
+    total: salas.length,
+    limpas: salas.filter(s => s.status_limpeza === 'Limpa').length,
+    pendentes: salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length,
+    percentualLimpas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpa').length / salas.length) * 100) : 0
+  };
+
   return (
-    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 py-6">
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={loadSalasData}
+            colors={[SENAC_COLORS.primary]}
+            tintColor={SENAC_COLORS.primary}
+          />
+        }
+      >
+        <View className="px-6 py-6 pb-8">
 
           <View className="flex-row items-center justify-between mb-8">
             <View>
@@ -46,7 +78,7 @@ const HomeScreen: React.FC = () => {
                 Olá, {user?.username}!
               </Text>
               <Text className={`text-base mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Bem-vindo ao sistema de zeladoria
+                Dashboard de Zeladoria SENAC
               </Text>
             </View>
             <TouchableOpacity
@@ -105,24 +137,24 @@ const HomeScreen: React.FC = () => {
 
           <View className="mb-8">
             <Text className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              Resumo
+              Estatísticas das Salas
             </Text>
             
-            <View className="grid grid-cols-2 gap-4">
+            <View className="grid grid-cols-2 gap-4 mb-4">
               <View className={`p-4 rounded-2xl ${
                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
               } backdrop-blur-sm border border-gray-200/20`}>
                 <View className="flex-row items-center">
-                                     <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                     style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                     <Building size={20} color={SENAC_COLORS.primary} />
-                   </View>
+                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
+                       style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
+                    <Building size={20} color={SENAC_COLORS.primary} />
+                  </View>
                   <View>
                     <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      12
+                      {salasStats.total}
                     </Text>
                     <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Prédios
+                      Total de Salas
                     </Text>
                   </View>
                 </View>
@@ -132,16 +164,56 @@ const HomeScreen: React.FC = () => {
                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
               } backdrop-blur-sm border border-gray-200/20`}>
                 <View className="flex-row items-center">
-                                     <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                     style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                     <Bell size={20} color={SENAC_COLORS.secondary} />
-                   </View>
+                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
+                       style={{ backgroundColor: '#10B98120' }}>
+                    <CheckCircle size={20} color="#10B981" />
+                  </View>
                   <View>
                     <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      5
+                      {salasStats.limpas}
                     </Text>
                     <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Alertas
+                      Salas Limpas
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View className="grid grid-cols-2 gap-4">
+              <View className={`p-4 rounded-2xl ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } backdrop-blur-sm border border-gray-200/20`}>
+                <View className="flex-row items-center">
+                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
+                       style={{ backgroundColor: '#F59E0B20' }}>
+                    <Clock size={20} color="#F59E0B" />
+                  </View>
+                  <View>
+                    <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {salasStats.pendentes}
+                    </Text>
+                    <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Pendentes
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View className={`p-4 rounded-2xl ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } backdrop-blur-sm border border-gray-200/20`}>
+                <View className="flex-row items-center">
+                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
+                       style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
+                    <BarChart3 size={20} color={SENAC_COLORS.secondary} />
+                  </View>
+                  <View>
+                    <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {salasStats.percentualLimpas}%
+                    </Text>
+                    <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Limpeza
                     </Text>
                   </View>
                 </View>
@@ -149,14 +221,35 @@ const HomeScreen: React.FC = () => {
             </View>
           </View>
 
+          {salasStats.total > 0 && (
+            <View className={`p-4 rounded-2xl mb-8 ${
+              isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+            } backdrop-blur-sm border border-gray-200/20`}>
+              <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Progresso de Limpeza
+              </Text>
+              <View className={`h-3 rounded-full mb-2 ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`}>
+                <View 
+                  className="h-3 rounded-full bg-green-500"
+                  style={{ width: `${salasStats.percentualLimpas}%` }}
+                />
+              </View>
+              <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {salasStats.limpas} de {salasStats.total} salas limpas
+              </Text>
+            </View>
+          )}
+
 
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
             <View className="flex-row items-center mb-4">
-              <Building size={24} color={SENAC_COLORS.primary} />
+              <BarChart3 size={24} color={SENAC_COLORS.primary} />
               <Text className={`text-lg font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Informações do Sistema
+                Sistema de Zeladoria
               </Text>
             </View>
             <View className="space-y-3">
@@ -205,4 +298,4 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-export default HomeScreen;
+export default InformationScreen;
