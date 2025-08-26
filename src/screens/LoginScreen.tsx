@@ -8,9 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  SafeAreaView,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, Lock, User } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
@@ -38,14 +38,14 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView 
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View className="flex-1 justify-center px-6">
           <View className="items-center mb-12">
-            <Image source={require('../../assets/images/logo.png')} className="w-64 h-44 mb-8" />
+            <Image source={require('../../assets/images/logo_name.png')} className="w-64 h-44 mb-8" />
             <Text className={`text-3xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Bem-vindo
             </Text>
