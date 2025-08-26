@@ -4,10 +4,10 @@ import {
   Text,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
@@ -71,7 +71,7 @@ const ProfileScreen: React.FC = () => {
 
   if (!user) {
     return (
-      <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={isDarkMode ? '#3B82F6' : '#2563EB'} />
           <Text className={`mt-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -83,9 +83,9 @@ const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 py-6">
+        <View className="px-6 py-6 pb-8">
 
           <View className="flex-row items-center justify-between mb-8">
             <Text className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
