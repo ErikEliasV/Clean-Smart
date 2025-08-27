@@ -12,6 +12,7 @@ interface SalasContextType {
   updateSala: (id: number, salaData: UpdateSalaData) => Promise<{ success: boolean; sala?: Sala; error?: string }>;
   deleteSala: (id: number) => Promise<{ success: boolean; error?: string }>;
   marcarComoLimpa: (id: number, data?: MarcarLimpezaData) => Promise<{ success: boolean; registro?: LimpezaRegistro; error?: string }>;
+  listRegistrosLimpeza: (salaId?: number) => Promise<{ success: boolean; registros?: LimpezaRegistro[]; error?: string }>;
 }
 
 const SalasContext = createContext<SalasContextType | undefined>(undefined);
@@ -253,6 +254,44 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
     }
   };
 
+  const listRegistrosLimpeza = async (salaId?: number): Promise<{ success: boolean; registros?: LimpezaRegistro[]; error?: string }> => {
+    if (!token) {
+      return { success: false, error: 'Token não encontrado' };
+    }
+
+    try {
+      let url = `${BASE_URL}/limpezas/`;
+      if (salaId) {
+        url += `?sala_id=${salaId}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const registros = await response.json();
+        return { success: true, registros };
+      } else {
+        const errorData = await response.json();
+        return { 
+          success: false, 
+          error: errorData.message || 'Erro ao listar registros de limpeza' 
+        };
+      }
+    } catch (error) {
+      console.error('List registros limpeza error:', error);
+      return { 
+        success: false, 
+        error: 'Erro de conexão. Verifique sua internet.' 
+      };
+    }
+  };
+
   const value: SalasContextType = {
     salas,
     isLoading,
@@ -263,6 +302,7 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
     updateSala,
     deleteSala,
     marcarComoLimpa,
+    listRegistrosLimpeza,
   };
 
   return (

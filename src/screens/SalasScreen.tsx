@@ -18,7 +18,11 @@ import SalaCard from '../components/SalaCard';
 import SalaForm from '../components/SalaForm';
 import { SENAC_COLORS } from '../constants/colors';
 
-const SalasScreen: React.FC = () => {
+interface SalasScreenProps {
+  navigation: any;
+}
+
+const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   const { isDarkMode, user } = useAuth();
   const { salas, isLoading, listSalas } = useSalas();
   const [showForm, setShowForm] = useState(false);
@@ -126,6 +130,7 @@ const SalasScreen: React.FC = () => {
     <SalaCard
       sala={item}
       onEdit={handleEditSala}
+      navigation={navigation}
     />
   );
 

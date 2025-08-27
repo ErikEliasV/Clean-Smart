@@ -5,7 +5,7 @@ export interface Sala {
   descricao: string;
   localizacao: string;
   status_limpeza: 'Limpa' | 'Limpeza Pendente';
-  ultima_limpeza_data_hora: string | null; // ISO 8601 string in UTC
+  ultima_limpeza_data_hora: string | null; 
   ultima_limpeza_funcionario: string | null;
 }
 
@@ -27,7 +27,7 @@ export interface LimpezaRegistro {
   id: number;
   sala: number;
   sala_nome: string;
-  data_hora_limpeza: string; // ISO 8601 string in UTC
+  data_hora_limpeza: string; 
   funcionario_responsavel: {
     id: number;
     username: string;
