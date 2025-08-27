@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import InformationScreen from '../screens/InformationScreen';
 import SalasScreen from '../screens/SalasScreen';
+import RegistrosLimpezaScreen from '../screens/RegistrosLimpezaScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import UserManagementScreen from '../screens/UserManagementScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
@@ -31,6 +32,19 @@ const ProfileStack = () => {
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="UserManagement" component={UserManagementScreen} />
+    </Stack.Navigator>
+  );
+};
+
+const SalasStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="SalasMain" component={SalasScreen} />
+      <Stack.Screen name="RegistrosLimpeza" component={RegistrosLimpezaScreen} />
     </Stack.Navigator>
   );
 };
@@ -86,7 +100,7 @@ const TabNavigator = () => {
     >
       <Tab.Screen 
         name="Salas" 
-        component={SalasScreen}
+        component={SalasStack}
         options={{
           tabBarLabel: 'Salas',
         }}

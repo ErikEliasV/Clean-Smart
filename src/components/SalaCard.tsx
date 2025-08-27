@@ -11,9 +11,10 @@ import { SENAC_COLORS } from '../constants/colors';
 interface SalaCardProps {
   sala: Sala;
   onEdit?: (sala: Sala) => void;
+  navigation?: any;
 }
 
-const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit }) => {
+const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
   const { isDarkMode, user } = useAuth();
   const { marcarComoLimpa, deleteSala } = useSalas();
 
@@ -79,17 +80,27 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit }) => {
     );
   };
 
+  const handleCardPress = () => {
+    if (navigation) {
+      navigation.navigate('RegistrosLimpeza', { salaId: sala.id, salaNome: sala.nome_numero });
+    }
+  };
+
   const isLimpa = sala.status_limpeza === 'Limpa';
   const statusColor = isLimpa ? '#10B981' : '#F59E0B';
   const statusIcon = isLimpa ? CheckCircle : Clock;
   const StatusIcon = statusIcon;
 
   return (
-    <View className={`mx-4 mb-4 p-4 rounded-2xl ${
-      isDarkMode ? 'bg-gray-800' : 'bg-white'
-    } shadow-sm border ${
-      isDarkMode ? 'border-gray-700' : 'border-gray-200'
-    }`}>
+    <TouchableOpacity 
+      onPress={handleCardPress}
+      activeOpacity={0.7}
+      className={`mx-4 mb-4 p-4 rounded-2xl ${
+        isDarkMode ? 'bg-gray-800' : 'bg-white'
+      } shadow-sm border ${
+        isDarkMode ? 'border-gray-700' : 'border-gray-200'
+      }`}
+    >
       <View className="flex-row justify-between items-start mb-3">
         <View className="flex-1">
           <Text className={`text-lg font-bold ${
@@ -198,7 +209,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit }) => {
           )}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
