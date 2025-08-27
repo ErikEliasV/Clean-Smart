@@ -1,34 +1,48 @@
-🧹 CleanSmart
+# 🧹 CleanSmart
 
-O CleanSmart é um aplicativo desenvolvido em React Native com Expo para auxiliar a equipe de zeladoria do Senac no gerenciamento de salas, tarefas e rotinas de limpeza.
+O ***CleanSmart*** é um aplicativo desenvolvido em ***React Native*** com ***Expo*** para auxiliar a equipe de ***zeladoria do Senac*** no gerenciamento de salas, tarefas e rotinas de limpeza.
 
-📥 Clonando o repositório
+## 📥 Clonando o repositório
 
 Para baixar o projeto, utilize o comando:
 
+```bash
 git clone https://github.com/ErikEliasV/Zela-senac.git
 cd Zela-senac
+```
 
-🚀 Como rodar o projeto
+## 🚀 Como rodar o projeto
 
-Instale as dependências:
+1. ***Instale as dependências:***
+   ```bash
+   npm install
+   ```
 
-npm install
+2. ***Inicie o projeto:***
+   ```bash
+   npx expo start
+   ```
 
+3. ***Para rodar no celular usando o Expo Go:***
+   ```bash
+   npx expo start --tunnel
+   ```
 
-Inicie o projeto:
+## 📦 Requisitos
 
-npx expo start
+- ***Node.js*** instalado
+- ***NPM*** instalado  
+- ***Expo CLI*** (instalado automaticamente ao usar `npx`)
 
+## 📱 Como usar
 
-Para rodar no celular usando o Expo Go, utilize:
+1. Baixe o aplicativo ***Expo Go*** na Play Store ou App Store
+2. Execute `npx expo start --tunnel` no terminal
+3. Escaneie o QR Code com o ***Expo Go*** (Android) ou câmera (iOS)
+4. O aplicativo será carregado no seu dispositivo
 
-npx expo start --tunnel
+## 🛠️ Tecnologias utilizadas
 
-📦 Requisitos
-
-Node.js instalado
-
-NPM instalado
-
-Expo CLI (instalado automaticamente ao usar npx)
+- ***React Native***
+- ***Expo***
+- ***JavaScript/TypeScript***
