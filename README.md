@@ -41,6 +41,12 @@ cd Zela-senac
 3. Escaneie o QR Code com o ***Expo Go*** (Android) ou câmera (iOS)
 4. O aplicativo será carregado no seu dispositivo
 
+## 🛜 Repsitorio da API
+
+   ```bash
+   https://github.com/thalsime/uc8_zeladoria
+   ```
+
 ## 🛠️ Tecnologias utilizadas
 
 - ***React Native***
