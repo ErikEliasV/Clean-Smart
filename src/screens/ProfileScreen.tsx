@@ -6,6 +6,7 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -88,9 +89,14 @@ const ProfileScreen: React.FC = () => {
         <View className="px-6 py-6 pb-8">
 
           <View className="flex-row items-center justify-between mb-8">
-            <Text className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              Perfil
-            </Text>
+            <View className="flex-row items-center">
+            
+                        <Image source={require('../../assets/images/logo_invert.png')} className="w-16 h-12 mr-4" />
+                        <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>
+                          Salas
+                        </Text>
+                      </View>
             <TouchableOpacity
               onPress={handleRefreshUser}
               disabled={isRefreshing}
@@ -171,11 +177,11 @@ const ProfileScreen: React.FC = () => {
 
             <TouchableOpacity
               onPress={navigateToChangePassword}
-              className={`flex-row items-center justify-between p-4 rounded-2xl ${
+              className={`mb-4 flex-row items-center justify-between p-4 rounded-2xl ${
                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
               } backdrop-blur-sm border border-gray-200/20`}
             >
-              <View className="flex-row items-center">
+              <View className="flex-row items-center ">
                                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
                    style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
                    <Lock size={20} color={SENAC_COLORS.primary} />
@@ -191,7 +197,7 @@ const ProfileScreen: React.FC = () => {
             {(user.is_staff || user.is_superuser) && (
               <TouchableOpacity
                 onPress={navigateToUserManagement}
-                className={`flex-row items-center justify-between p-4 rounded-2xl ${
+                className={`mb-4 flex-row items-center justify-between p-4 rounded-2xl ${
                   isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
                 } backdrop-blur-sm border border-gray-200/20`}
               >

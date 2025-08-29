@@ -10,6 +10,14 @@ export type ProfileStackParamList = {
   UserManagement: undefined;
 };
 
+export type SalasStackParamList = {
+  SalasMain: undefined;
+  RegistrosLimpeza: {
+    salaId?: number;
+    salaNome?: string;
+  };
+};
+
 export type TabParamList = {
   Salas: undefined;
   Home: undefined;
