@@ -15,10 +15,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { LimpezaRegistro, Sala } from '../types/salas';
 import { SENAC_COLORS } from '../constants/colors';
+import { StackScreenProps } from '@react-navigation/stack';
+import { SalasStackParamList } from '../types/navigation';
 
-interface RegistrosLimpezaScreenProps {
-  navigation: any;
-}
+type RegistrosLimpezaScreenProps = StackScreenProps<SalasStackParamList, 'RegistrosLimpeza'>;
 
 const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigation, route }) => {
   const { isDarkMode, user } = useAuth();
@@ -76,7 +76,7 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
   };
 
   const renderRegistro = ({ item }: { item: LimpezaRegistro }) => (
-    <View className={`mx-4 mb-3 p-4 rounded-xl ${
+    <View className={`mt-4 mx-4 mb-3 p-4 rounded-xl ${
       isDarkMode ? 'bg-gray-800' : 'bg-white'
     } shadow-sm border ${
       isDarkMode ? 'border-gray-700' : 'border-gray-200'

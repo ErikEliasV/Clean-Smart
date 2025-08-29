@@ -180,7 +180,7 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
         <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center">
 
-            <Image source={require('../../assets/images/logo_invert.png')} className="w-16 h-12" />
+            <Image source={require('../../assets/images/logo_invert.png')} className="w-16 h-12 mr-4" />
             <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
               Salas
