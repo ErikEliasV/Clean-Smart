@@ -33,24 +33,12 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
   };
 
   const handleMarcarLimpa = () => {
-    Alert.alert(
-      'Marcar como Limpa',
-      `Deseja marcar a ${sala.nome_numero} como limpa?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            const result = await marcarComoLimpa(sala.id);
-            if (result.success) {
-              Alert.alert('Sucesso', 'Sala marcada como limpa!');
-            } else {
-              Alert.alert('Erro', result.error || 'Erro ao marcar sala como limpa');
-            }
-          }
-        }
-      ]
-    );
+    if (navigation) {
+      navigation.navigate('LimpezaProcesso', { 
+        salaId: sala.id, 
+        salaNome: sala.nome_numero 
+      });
+    }
   };
 
   const handleDelete = () => {
@@ -68,7 +56,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
           text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
-            const result = await deleteSala(sala.id);
+            const result = await deleteSala(Number(sala.id));
             if (result.success) {
               Alert.alert('Sucesso', 'Sala excluída com sucesso!');
             } else {
@@ -127,14 +115,14 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
             </View>
           </View>
         </View>
-        <View className="flex-row space-x-2">
+        <View className="flex-row space-x-2 gap-2">
           {!isLimpa && (
             <TouchableOpacity
               onPress={handleMarcarLimpa}
               className="p-2 rounded-full"
-              style={{ backgroundColor: SENAC_COLORS.primary + '20' }}
+              style={{ backgroundColor: isDarkMode ? '#10B981' + '20' : '#10B981' + '20' }}
             >
-              <BrushCleaning size={20} color={SENAC_COLORS.primary} />
+              <BrushCleaning size={20} color={isDarkMode ? '#10B981' : '#10B981'} />
             </TouchableOpacity>
           )}
           
