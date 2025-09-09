@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { useResponsive } from '../hooks/useResponsive';
+import Sidebar from '../components/Sidebar';
 
 
 import LoginScreen from '../screens/LoginScreen';
 import InformationScreen from '../screens/InformationScreen';
 import SalasScreen from '../screens/SalasScreen';
 import RegistrosLimpezaScreen from '../screens/RegistrosLimpezaScreen';
+import LimpezaProcessoScreen from '../screens/LimpezaProcessoScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import UserManagementScreen from '../screens/UserManagementScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
@@ -45,6 +49,7 @@ const SalasStack = () => {
     >
       <Stack.Screen name="SalasMain" component={SalasScreen} />
       <Stack.Screen name="RegistrosLimpeza" component={RegistrosLimpezaScreen} />
+      <Stack.Screen name="LimpezaProcesso" component={LimpezaProcessoScreen} />
     </Stack.Navigator>
   );
 };
@@ -53,6 +58,42 @@ const SalasStack = () => {
 const TabNavigator = () => {
   const { isDarkMode } = useAuth();
   const insets = useSafeAreaInsets();
+  const { shouldUseSidebar } = useResponsive();
+  const [activeTab, setActiveTab] = useState('Salas');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleTabPress = (tabName: string) => {
+    setActiveTab(tabName);
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'Salas':
+        return <SalasStack />;
+      case 'Home':
+        return <InformationScreen />;
+      case 'Profile':
+        return <ProfileStack />;
+      default:
+        return <SalasStack />;
+    }
+  };
+
+  if (shouldUseSidebar) {
+    return (
+      <View className="flex-1 flex-row">
+        <Sidebar
+          activeTab={activeTab}
+          onTabPress={handleTabPress}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+        <View className="flex-1">
+          {renderContent()}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Tab.Navigator

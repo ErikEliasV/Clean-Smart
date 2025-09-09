@@ -238,6 +238,17 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
           } : sala
         ));
         return { success: true, registro };
+      } else if (response.status === 201) {
+        const registro = await response.json();
+        setSalas(prev => prev.map(sala => 
+          sala.id === id ? {
+            ...sala,
+            status_limpeza: 'Limpa',
+            ultima_limpeza_data_hora: registro.data_hora_limpeza,
+            ultima_limpeza_funcionario: registro.funcionario_responsavel.username
+          } : sala
+        ));
+        return { success: true, registro };
       } else {
         const errorData = await response.json();
         return { 

@@ -16,6 +16,10 @@ export type SalasStackParamList = {
     salaId?: number;
     salaNome?: string;
   };
+  LimpezaProcesso: {
+    salaId: number;
+    salaNome: string;
+  };
 };
 
 export type TabParamList = {
