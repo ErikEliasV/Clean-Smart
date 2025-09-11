@@ -64,7 +64,7 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
     setIsLoading(true);
     try {
       const data = observacoes.trim() ? { observacoes: observacoes.trim() } : {};
-      const result = await marcarComoLimpa(salaId, data);
+      const result = await marcarComoLimpa(parseInt(salaId, 10), data);
       
       if (result.success) {
         Alert.alert(

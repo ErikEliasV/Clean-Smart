@@ -21,6 +21,7 @@ import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 
 import { Home, User, Users, Settings, Building } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
+import { SalasStackParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -41,16 +42,18 @@ const ProfileStack = () => {
 };
 
 const SalasStack = () => {
+  const SalasStackNavigator = createStackNavigator<SalasStackParamList>();
+  
   return (
-    <Stack.Navigator
+    <SalasStackNavigator.Navigator
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Stack.Screen name="SalasMain" component={SalasScreen} />
-      <Stack.Screen name="RegistrosLimpeza" component={RegistrosLimpezaScreen} />
-      <Stack.Screen name="LimpezaProcesso" component={LimpezaProcessoScreen} />
-    </Stack.Navigator>
+      <SalasStackNavigator.Screen name="SalasMain" component={SalasScreen} />
+      <SalasStackNavigator.Screen name="RegistrosLimpeza" component={RegistrosLimpezaScreen} />
+      <SalasStackNavigator.Screen name="LimpezaProcesso" component={LimpezaProcessoScreen} />
+    </SalasStackNavigator.Navigator>
   );
 };
 

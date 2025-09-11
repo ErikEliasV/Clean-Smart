@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, isAdmin, isZelador, isCorpoDocente } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { 
   User, 
@@ -105,7 +105,7 @@ const InformationScreen: React.FC = () => {
               }`}>
                 {user?.is_superuser ? (
                   <Crown size={32} color={SENAC_COLORS.secondary} />
-                ) : user?.is_staff ? (
+                ) : isZelador(user) ? (
                   <Shield size={32} color={SENAC_COLORS.primary} />
                 ) : (
                   <User size={32} color={SENAC_COLORS.primary} />
@@ -124,7 +124,7 @@ const InformationScreen: React.FC = () => {
                       <Text style={{ color: SENAC_COLORS.secondary }} className="text-xs font-medium">Super Admin</Text>
                     </View>
                   )}
-                  {user?.is_staff && (
+                  {(isZelador(user) || isAdmin(user)) && (
                     <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
                       <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Admin</Text>
                     </View>
