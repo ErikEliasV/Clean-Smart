@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { X, Save } from 'lucide-react-native';
 import { Sala, CreateSalaData, UpdateSalaData } from '../types/salas';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, canManageSalas } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { SENAC_COLORS } from '../constants/colors';
 
@@ -40,7 +40,7 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
       setFormData({
         nome_numero: sala.nome_numero,
         capacidade: sala.capacidade.toString(),
-        descricao: sala.descricao,
+        descricao: sala.descricao || '',
         localizacao: sala.localizacao,
       });
     } else {
@@ -81,8 +81,8 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    if (!user?.is_staff && !user?.is_superuser) {
-      Alert.alert('Erro', 'Apenas administradores podem criar/editar salas');
+    if (!canManageSalas(user)) {
+      Alert.alert('Erro', 'Apenas administradores e zeladores podem criar/editar salas');
       return;
     }
 

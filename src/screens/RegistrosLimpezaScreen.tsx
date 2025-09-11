@@ -11,7 +11,7 @@ import {
 import { parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, Filter, Calendar, User, MapPin } from 'lucide-react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, canManageSalas } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { LimpezaRegistro, Sala } from '../types/salas';
 import { SENAC_COLORS } from '../constants/colors';
@@ -26,11 +26,13 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
   const [registros, setRegistros] = useState<LimpezaRegistro[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedSalaId, setSelectedSalaId] = useState<number | undefined>(route?.params?.salaId);
+  const [selectedSalaId, setSelectedSalaId] = useState<number | undefined>(
+    route?.params?.salaId ? parseInt(route.params.salaId, 10) : undefined
+  );
   const [showSalaFilter, setShowSalaFilter] = useState(false);
 
   const loadRegistros = async (salaId?: number) => {
-    if (!user?.is_staff && !user?.is_superuser) {
+    if (!canManageSalas(user)) {
       Alert.alert('Erro', 'Apenas administradores podem acessar os registros de limpeza');
       navigation.goBack();
       return;

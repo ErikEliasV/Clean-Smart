@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -32,8 +33,11 @@ interface User {
   id: number;
   username: string;
   email: string;
-  is_staff: boolean;
   is_superuser: boolean;
+  groups: number[];
+  profile: {
+    profile_picture: string | null;
+  };
 }
 
 type UserManagementScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
@@ -65,6 +69,7 @@ const UserManagementScreen: React.FC = () => {
     setIsLoading(false);
 
     if (result.success && result.users) {
+      // As URLs das fotos já vêm completas da API
       setUsers(result.users);
     } else {
       Alert.alert('Erro', result.error || 'Erro ao carregar usuários');
@@ -88,7 +93,6 @@ const UserManagementScreen: React.FC = () => {
       email: newEmail.trim(),
       password: newPassword,
       confirm_password: confirmPassword,
-      is_staff: isStaff,
       is_superuser: isSuperuser,
     });
     setIsLoading(false);
@@ -117,7 +121,7 @@ const UserManagementScreen: React.FC = () => {
     setShowUserDetails(true);
   };
 
-  const isAdmin = currentUser?.is_staff || currentUser?.is_superuser;
+  const isAdmin = currentUser?.is_superuser;
 
   if (!isAdmin) {
     return (
@@ -189,37 +193,49 @@ const UserManagementScreen: React.FC = () => {
                 } backdrop-blur-sm`}
               >
                 <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <View className="flex-row items-center">
-                      <Text className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {user.username}
-                      </Text>
-                      {user.is_superuser && (
-                        <Crown size={16} color={SENAC_COLORS.secondary} style={{ marginLeft: 8 }} />
-                      )}
-                      {user.is_staff && !user.is_superuser && (
-                        <Shield size={16} color={SENAC_COLORS.primary} style={{ marginLeft: 8 }} />
+                  <View className="flex-row items-center flex-1">
+                    {/* Avatar do usuário */}
+                    <View className="mr-4">
+                      {user.profile?.profile_picture ? (
+                        <Image
+                          source={{ uri: user.profile.profile_picture }}
+                          className="w-12 h-12 rounded-full"
+                          style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                        />
+                      ) : (
+                        <View 
+                          className="w-12 h-12 rounded-full items-center justify-center"
+                          style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                        >
+                          <User size={20} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                        </View>
                       )}
                     </View>
-                    <Text className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {user.email || 'Sem email'}
-                    </Text>
-                    <View className="flex-row mt-3">
-                      {user.is_superuser && (
-                        <View className="px-2 py-1 rounded-full mr-2" style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                          <Text style={{ color: SENAC_COLORS.secondary }} className="text-xs font-medium">Super Admin</Text>
-                        </View>
-                      )}
-                      {user.is_staff && !user.is_superuser && (
-                        <View className="px-2 py-1 rounded-full mr-2" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                          <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Admin</Text>
-                        </View>
-                      )}
-                      {!user.is_staff && !user.is_superuser && (
-                        <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                          <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Usuário</Text>
-                        </View>
-                      )}
+                    
+                    <View className="flex-1">
+                      <View className="flex-row items-center">
+                        <Text className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {user.username}
+                        </Text>
+                        {user.is_superuser && (
+                          <Crown size={16} color={SENAC_COLORS.secondary} style={{ marginLeft: 8 }} />
+                        )}
+                      </View>
+                      <Text className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {user.email || 'Sem email'}
+                      </Text>
+                      <View className="flex-row mt-3">
+                        {user.is_superuser && (
+                          <View className="px-2 py-1 rounded-full mr-2" style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
+                            <Text style={{ color: SENAC_COLORS.secondary }} className="text-xs font-medium">Super Admin</Text>
+                          </View>
+                        )}
+                        {!user.is_superuser && (
+                          <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
+                            <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Usuário</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
                   </View>
                   <Eye size={20} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
@@ -404,9 +420,23 @@ const UserManagementScreen: React.FC = () => {
 
             {selectedUser && (
               <View>
-                <View className="flex-row items-center mb-4">
-                  <User size={24} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-                  <Text className={`text-lg font-semibold ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {/* Avatar do usuário no modal */}
+                <View className="items-center mb-6">
+                  {selectedUser.profile?.profile_picture ? (
+                    <Image
+                      source={{ uri: selectedUser.profile.profile_picture }}
+                      className="w-20 h-20 rounded-full mb-3"
+                      style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                    />
+                  ) : (
+                    <View 
+                      className="w-20 h-20 rounded-full items-center justify-center mb-3"
+                      style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                    >
+                      <User size={32} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                    </View>
+                  )}
+                  <Text className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {selectedUser.username}
                   </Text>
                 </View>
@@ -431,12 +461,7 @@ const UserManagementScreen: React.FC = () => {
                       <Text className="text-yellow-800 font-medium">Super Administrador</Text>
                     </View>
                   )}
-                  {selectedUser.is_staff && !selectedUser.is_superuser && (
-                    <View className="bg-blue-100/80 px-3 py-2 rounded-xl">
-                      <Text className="text-blue-800 font-medium">Administrador</Text>
-                    </View>
-                  )}
-                  {!selectedUser.is_staff && !selectedUser.is_superuser && (
+                  {!selectedUser.is_superuser && (
                     <View className="bg-gray-100/80 px-3 py-2 rounded-xl">
                       <Text className="text-gray-800 font-medium">Usuário Comum</Text>
                     </View>

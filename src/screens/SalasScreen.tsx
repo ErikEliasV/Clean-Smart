@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, X } from 'lucide-react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, canManageSalas } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { Sala } from '../types/salas';
 import SalaCard from '../components/SalaCard';
@@ -46,7 +46,7 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   }, []);
 
   const handleAddSala = () => {
-    if (!user?.is_staff && !user?.is_superuser) {
+    if (!canManageSalas(user)) {
       return;
     }
     setEditingSala(undefined);
@@ -77,7 +77,7 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
       const query = searchQuery.toLowerCase().trim();
       searchMatch =
         sala.nome_numero.toLowerCase().includes(query) ||
-        sala.descricao.toLowerCase().includes(query) ||
+        sala.descricao?.toLowerCase().includes(query) ||
         sala.localizacao.toLowerCase().includes(query) ||
         sala.capacidade.toString().includes(query);
     }
@@ -149,7 +149,7 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
         }`}>
         {searchQuery.trim()
           ? 'Tente uma pesquisa diferente ou limpe o filtro'
-          : filterStatus === 'all' && (user?.is_staff || user?.is_superuser)
+          : filterStatus === 'all' && canManageSalas(user)
             ? 'Toque no botão + para adicionar uma nova sala'
             : filterStatus !== 'all'
               ? 'Tente alterar o filtro para ver outras salas'
@@ -187,7 +187,7 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
             </Text>
           </View>
 
-          {(user?.is_staff || user?.is_superuser) && (
+          {canManageSalas(user) && (
             <TouchableOpacity
               onPress={handleAddSala}
               className="p-2 rounded-full"
