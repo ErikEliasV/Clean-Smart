@@ -29,7 +29,9 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
   const [formData, setFormData] = useState({
     nome_numero: '',
     capacidade: '',
+    validade_limpeza_horas: '4',
     descricao: '',
+    instrucoes: '',
     localizacao: '',
   });
 
@@ -40,14 +42,18 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
       setFormData({
         nome_numero: sala.nome_numero,
         capacidade: sala.capacidade.toString(),
+        validade_limpeza_horas: sala.validade_limpeza_horas.toString(),
         descricao: sala.descricao || '',
+        instrucoes: sala.instrucoes || '',
         localizacao: sala.localizacao,
       });
     } else {
       setFormData({
         nome_numero: '',
         capacidade: '',
+        validade_limpeza_horas: '4',
         descricao: '',
+        instrucoes: '',
         localizacao: '',
       });
     }
@@ -67,8 +73,9 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
       Alert.alert('Erro', 'Capacidade deve ser um número maior que zero');
       return false;
     }
-    if (!formData.descricao.trim()) {
-      Alert.alert('Erro', 'Descrição é obrigatória');
+    const validadeNum = parseInt(formData.validade_limpeza_horas);
+    if (isNaN(validadeNum) || validadeNum <= 0) {
+      Alert.alert('Erro', 'Validade da limpeza deve ser um número maior que zero');
       return false;
     }
     if (!formData.localizacao.trim()) {
@@ -92,13 +99,15 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
       const salaData = {
         nome_numero: formData.nome_numero.trim(),
         capacidade: parseInt(formData.capacidade),
-        descricao: formData.descricao.trim(),
+        validade_limpeza_horas: parseInt(formData.validade_limpeza_horas),
         localizacao: formData.localizacao.trim(),
+        descricao: formData.descricao.trim() || undefined,
+        instrucoes: formData.instrucoes.trim() || undefined,
       };
 
       let result;
       if (isEditing && sala) {
-        result = await updateSala(sala.id, salaData as UpdateSalaData);
+        result = await updateSala(sala.qr_code_id, salaData as UpdateSalaData);
       } else {
         result = await createSala(salaData as CreateSalaData);
       }
@@ -192,6 +201,28 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
               <Text className={`text-base font-semibold mb-2 ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
+                Validade da Limpeza (horas) *
+              </Text>
+              <TextInput
+                className={inputStyle}
+                placeholder="Ex: 4"
+                placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
+                value={formData.validade_limpeza_horas}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, validade_limpeza_horas: text }))}
+                keyboardType="numeric"
+                editable={!isLoading}
+              />
+              <Text className={`text-sm mt-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                Por quantas horas a limpeza será válida
+              </Text>
+            </View>
+
+            <View>
+              <Text className={`text-base font-semibold mb-2 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
                 Localização *
               </Text>
               <TextInput
@@ -208,7 +239,7 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
               <Text className={`text-base font-semibold mb-2 ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
-                Descrição *
+                Descrição
               </Text>
               <TextInput
                 className={`${inputStyle} h-24`}
@@ -216,6 +247,24 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
                 placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
                 value={formData.descricao}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, descricao: text }))}
+                multiline
+                textAlignVertical="top"
+                editable={!isLoading}
+              />
+            </View>
+
+            <View>
+              <Text className={`text-base font-semibold mb-2 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Instruções de Limpeza
+              </Text>
+              <TextInput
+                className={`${inputStyle} h-24`}
+                placeholder="Instruções específicas para a equipe de zeladoria..."
+                placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
+                value={formData.instrucoes}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, instrucoes: text }))}
                 multiline
                 textAlignVertical="top"
                 editable={!isLoading}

@@ -56,7 +56,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
           text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
-            const result = await deleteSala(Number(sala.id));
+            const result = await deleteSala(sala.qr_code_id);
             if (result.success) {
               Alert.alert('Sucesso', 'Sala excluída com sucesso!');
             } else {

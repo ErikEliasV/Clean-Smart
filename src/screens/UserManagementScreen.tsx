@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, USER_GROUPS } from '../contexts/AuthContext';
 import type { ProfileStackParamList } from '../types/navigation';
 import { 
   Users, 
@@ -51,13 +51,24 @@ const UserManagementScreen: React.FC = () => {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
-  // Form states
   const [newUsername, setNewUsername] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isStaff, setIsStaff] = useState(false);
   const [isSuperuser, setIsSuperuser] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+
+  const getImageUrl = (profilePicture: string | null): string | null => {
+    if (!profilePicture || profilePicture.trim() === '') {
+      return null;
+    }
+    
+    if (profilePicture.startsWith('http')) {
+      return profilePicture;
+    }
+    
+    return `https://zeladoria.tsr.net.br${profilePicture}`;
+  };
 
   useEffect(() => {
     loadUsers();
@@ -69,7 +80,6 @@ const UserManagementScreen: React.FC = () => {
     setIsLoading(false);
 
     if (result.success && result.users) {
-      // As URLs das fotos já vêm completas da API
       setUsers(result.users);
     } else {
       Alert.alert('Erro', result.error || 'Erro ao carregar usuários');
@@ -88,13 +98,20 @@ const UserManagementScreen: React.FC = () => {
     }
 
     setIsLoading(true);
-    const result = await createUser({
+    
+    const userData: any = {
       username: newUsername.trim(),
       email: newEmail.trim(),
       password: newPassword,
       confirm_password: confirmPassword,
       is_superuser: isSuperuser,
-    });
+    };
+    
+    if (!isSuperuser && selectedGroup !== null) {
+      userData.groups = [selectedGroup];
+    }
+    
+    const result = await createUser(userData);
     setIsLoading(false);
 
     if (result.success) {
@@ -112,13 +129,55 @@ const UserManagementScreen: React.FC = () => {
     setNewEmail('');
     setNewPassword('');
     setConfirmPassword('');
-    setIsStaff(false);
     setIsSuperuser(false);
+    setSelectedGroup(null);
   };
 
   const openUserDetails = (user: User) => {
     setSelectedUser(user);
     setShowUserDetails(true);
+  };
+
+  const getGroupName = (groupId: number): string => {
+    switch (groupId) {
+      case USER_GROUPS.ZELADORIA:
+        return 'Zeladoria';
+      case USER_GROUPS.CORPO_DOCENTE:
+        return 'Corpo Docente';
+      default:
+        return 'Usuário';
+    }
+  };
+
+  const getUserRole = (user: User): string => {
+    if (user.is_superuser) {
+      return 'Administrador';
+    }
+    
+    if (user.groups && user.groups.length > 0) {
+      return getGroupName(user.groups[0]);
+    }
+    
+    return 'Usuário';
+  };
+
+  const getUserRoleColor = (user: User): string => {
+    if (user.is_superuser) {
+      return SENAC_COLORS.secondary;
+    }
+    
+    if (user.groups && user.groups.length > 0) {
+      switch (user.groups[0]) {
+        case USER_GROUPS.ZELADORIA:
+          return '#10B981';
+        case USER_GROUPS.CORPO_DOCENTE:
+          return '#3B82F6';
+        default:
+          return SENAC_COLORS.primary;
+      }
+    }
+    
+    return SENAC_COLORS.primary;
   };
 
   const isAdmin = currentUser?.is_superuser;
@@ -196,20 +255,24 @@ const UserManagementScreen: React.FC = () => {
                   <View className="flex-row items-center flex-1">
                     {/* Avatar do usuário */}
                     <View className="mr-4">
-                      {user.profile?.profile_picture ? (
-                        <Image
-                          source={{ uri: user.profile.profile_picture }}
-                          className="w-12 h-12 rounded-full"
-                          style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
-                        />
-                      ) : (
-                        <View 
-                          className="w-12 h-12 rounded-full items-center justify-center"
-                          style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
-                        >
-                          <User size={20} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-                        </View>
-                      )}
+                      {(() => {
+                        const imageUrl = getImageUrl(user.profile?.profile_picture);
+                        return imageUrl ? (
+                          <Image
+                            source={{ uri: imageUrl }}
+                            className="w-12 h-12 rounded-full"
+                            style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                            defaultSource={require('../../assets/images/logo.png')}
+                          />
+                        ) : (
+                          <View 
+                            className="w-12 h-12 rounded-full items-center justify-center"
+                            style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                          >
+                            <User size={20} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                          </View>
+                        );
+                      })()}
                     </View>
                     
                     <View className="flex-1">
@@ -225,16 +288,11 @@ const UserManagementScreen: React.FC = () => {
                         {user.email || 'Sem email'}
                       </Text>
                       <View className="flex-row mt-3">
-                        {user.is_superuser && (
-                          <View className="px-2 py-1 rounded-full mr-2" style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                            <Text style={{ color: SENAC_COLORS.secondary }} className="text-xs font-medium">Super Admin</Text>
-                          </View>
-                        )}
-                        {!user.is_superuser && (
-                          <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                            <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Usuário</Text>
-                          </View>
-                        )}
+                        <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${getUserRoleColor(user)}20` }}>
+                          <Text style={{ color: getUserRoleColor(user) }} className="text-xs font-medium">
+                            {getUserRole(user)}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   </View>
@@ -340,32 +398,92 @@ const UserManagementScreen: React.FC = () => {
               </View>
 
               <View className="mb-4">
+                <Text className={`font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Tipo de Usuário
+                </Text>
+                
+                {/* Super Administrador */}
                 <TouchableOpacity
-                  onPress={() => setIsStaff(!isStaff)}
-                  className="flex-row items-center mb-3"
-                >
-                  <View className={`w-5 h-5 border rounded mr-3 ${
-                    isStaff ? 'bg-blue-500 border-blue-500' : 'border-gray-400'
-                  }`}>
-                    {isStaff && <Check size={16} color="white" />}
-                  </View>
-                  <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    É Administrador
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setIsSuperuser(!isSuperuser)}
-                  className="flex-row items-center"
+                  onPress={() => {
+                    setIsSuperuser(true);
+                    setSelectedGroup(null);
+                  }}
+                  className="flex-row items-center mb-3 p-3 rounded-xl border"
+                  style={{
+                    backgroundColor: isSuperuser ? `${SENAC_COLORS.secondary}10` : 'transparent',
+                    borderColor: isSuperuser ? SENAC_COLORS.secondary : (isDarkMode ? '#374151' : '#D1D5DB')
+                  }}
                 >
                   <View className={`w-5 h-5 border rounded mr-3 ${
                     isSuperuser ? 'bg-yellow-500 border-yellow-500' : 'border-gray-400'
                   }`}>
                     {isSuperuser && <Check size={16} color="white" />}
                   </View>
-                  <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    É Super Administrador
-                  </Text>
+                  <Crown size={20} color={isSuperuser ? SENAC_COLORS.secondary : (isDarkMode ? '#9CA3AF' : '#6B7280')} />
+                  <View className="ml-3 flex-1">
+                    <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Administrador
+                    </Text>
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Acesso total ao sistema
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Zeladoria */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsSuperuser(false);
+                    setSelectedGroup(USER_GROUPS.ZELADORIA);
+                  }}
+                  className="flex-row items-center mb-3 p-3 rounded-xl border"
+                  style={{
+                    backgroundColor: selectedGroup === USER_GROUPS.ZELADORIA ? '#10B98110' : 'transparent',
+                    borderColor: selectedGroup === USER_GROUPS.ZELADORIA ? '#10B981' : (isDarkMode ? '#374151' : '#D1D5DB')
+                  }}
+                >
+                  <View className={`w-5 h-5 border rounded mr-3 ${
+                    selectedGroup === USER_GROUPS.ZELADORIA ? 'bg-green-500 border-green-500' : 'border-gray-400'
+                  }`}>
+                    {selectedGroup === USER_GROUPS.ZELADORIA && <Check size={16} color="white" />}
+                  </View>
+                  <Shield size={20} color={selectedGroup === USER_GROUPS.ZELADORIA ? '#10B981' : (isDarkMode ? '#9CA3AF' : '#6B7280')} />
+                  <View className="ml-3 flex-1">
+                    <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Zeladoria
+                    </Text>
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Gerencia salas e registros de limpeza
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Corpo Docente */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsSuperuser(false);
+                    setSelectedGroup(USER_GROUPS.CORPO_DOCENTE);
+                  }}
+                  className="flex-row items-center mb-3 p-3 rounded-xl border"
+                  style={{
+                    backgroundColor: selectedGroup === USER_GROUPS.CORPO_DOCENTE ? '#3B82F610' : 'transparent',
+                    borderColor: selectedGroup === USER_GROUPS.CORPO_DOCENTE ? '#3B82F6' : (isDarkMode ? '#374151' : '#D1D5DB')
+                  }}
+                >
+                  <View className={`w-5 h-5 border rounded mr-3 ${
+                    selectedGroup === USER_GROUPS.CORPO_DOCENTE ? 'bg-blue-500 border-blue-500' : 'border-gray-400'
+                  }`}>
+                    {selectedGroup === USER_GROUPS.CORPO_DOCENTE && <Check size={16} color="white" />}
+                  </View>
+                  <User size={20} color={selectedGroup === USER_GROUPS.CORPO_DOCENTE ? '#3B82F6' : (isDarkMode ? '#9CA3AF' : '#6B7280')} />
+                  <View className="ml-3 flex-1">
+                    <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Corpo Docente
+                    </Text>
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Visualiza salas e pode solicitar limpeza
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -422,20 +540,24 @@ const UserManagementScreen: React.FC = () => {
               <View>
                 {/* Avatar do usuário no modal */}
                 <View className="items-center mb-6">
-                  {selectedUser.profile?.profile_picture ? (
-                    <Image
-                      source={{ uri: selectedUser.profile.profile_picture }}
-                      className="w-20 h-20 rounded-full mb-3"
-                      style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
-                    />
-                  ) : (
-                    <View 
-                      className="w-20 h-20 rounded-full items-center justify-center mb-3"
-                      style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
-                    >
-                      <User size={32} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-                    </View>
-                  )}
+                  {(() => {
+                    const imageUrl = getImageUrl(selectedUser.profile?.profile_picture);
+                    return imageUrl ? (
+                      <Image
+                        source={{ uri: imageUrl }}
+                        className="w-20 h-20 rounded-full mb-3"
+                        style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                        defaultSource={require('../../assets/images/logo.png')}
+                      />
+                    ) : (
+                      <View 
+                        className="w-20 h-20 rounded-full items-center justify-center mb-3"
+                        style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                      >
+                        <User size={32} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
+                      </View>
+                    );
+                  })()}
                   <Text className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {selectedUser.username}
                   </Text>
@@ -456,16 +578,30 @@ const UserManagementScreen: React.FC = () => {
                 </View>
 
                 <View className="space-y-2">
-                  {selectedUser.is_superuser && (
-                    <View className="bg-yellow-100/80 px-3 py-2 rounded-xl">
-                      <Text className="text-yellow-800 font-medium">Super Administrador</Text>
-                    </View>
-                  )}
-                  {!selectedUser.is_superuser && (
-                    <View className="bg-gray-100/80 px-3 py-2 rounded-xl">
-                      <Text className="text-gray-800 font-medium">Usuário Comum</Text>
-                    </View>
-                  )}
+                  <View 
+                    className="px-3 py-2 rounded-xl"
+                    style={{ backgroundColor: `${getUserRoleColor(selectedUser)}20` }}
+                  >
+                    <Text 
+                      className="font-medium"
+                      style={{ color: getUserRoleColor(selectedUser) }}
+                    >
+                      {getUserRole(selectedUser)}
+                    </Text>
+                    {selectedUser.is_superuser && (
+                      <Text className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Acesso total ao sistema
+                      </Text>
+                    )}
+                    {!selectedUser.is_superuser && selectedUser.groups && selectedUser.groups.length > 0 && (
+                      <Text className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {selectedUser.groups[0] === USER_GROUPS.ZELADORIA 
+                          ? 'Gerencia salas e registros de limpeza'
+                          : 'Visualiza salas e pode solicitar limpeza'
+                        }
+                      </Text>
+                    )}
+                  </View>
                 </View>
               </View>
             )}

@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, Filter, Calendar, User, MapPin } from 'lucide-react-native';
@@ -27,7 +28,7 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSalaId, setSelectedSalaId] = useState<number | undefined>(
-    route?.params?.salaId ? parseInt(route.params.salaId, 10) : undefined
+    route?.params?.salaId ? salas.find(s => s.qr_code_id === route.params.salaId)?.id : undefined
   );
   const [showSalaFilter, setShowSalaFilter] = useState(false);
 
@@ -192,9 +193,9 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
   );
 
   return (
-    <View className={`flex-1 ${
+    <SafeAreaView className={`flex-1 ${
       isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
-    }`}>
+    }`} edges={['top']}>
       {/* Header */}
       <View className={`flex-row items-center justify-between p-4 border-b ${
         isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -271,7 +272,7 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
