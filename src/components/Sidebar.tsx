@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
-import { Home, User, Building, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Home, User, Building, ChevronLeft, ChevronRight, Settings, QrCode } from 'lucide-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { SENAC_COLORS } from '../constants/colors';
 
@@ -29,9 +29,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [isCollapsed, animatedWidth]);
 
   const tabs = [
-    { name: 'Salas', icon: Building, label: 'Salas' },
     { name: 'Home', icon: Home, label: 'Informações' },
+    { name: 'Salas', icon: Building, label: 'Salas' },
+    { name: 'QRScanner', icon: QrCode, label: 'QR Scanner' },
     { name: 'Profile', icon: User, label: 'Perfil' },
+    { name: 'Settings', icon: Settings, label: 'Configurações' },
   ];
 
   const getIconColor = (tabName: string) => {
@@ -82,6 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {tabs.map((tab) => {
           const IconComponent = tab.icon;
           const isActive = activeTab === tab.name;
+          const isQRScanner = tab.name === 'QRScanner';
           
           return (
             <TouchableOpacity
@@ -95,17 +98,35 @@ const Sidebar: React.FC<SidebarProps> = ({
               style={{
                 backgroundColor: isActive 
                   ? (isDarkMode ? '#374151' : '#EFF6FF') 
-                  : 'transparent'
+                  : 'transparent',
+                ...(isQRScanner && {
+                  backgroundColor: isActive 
+                    ? SENAC_COLORS.primary 
+                    : (isDarkMode ? '#374151' : '#F3F4F6'),
+                  borderWidth: 1,
+                  borderColor: SENAC_COLORS.primary,
+                })
               }}
             >
-              <IconComponent 
-                size={24} 
-                color={getIconColor(tab.name)} 
-              />
+              <View style={{
+                width: 24,
+                height: 24,
+                alignItems: 'center',
+                justifyContent: 'center',
+                ...(isQRScanner && isActive && {
+                  backgroundColor: 'white',
+                  borderRadius: 4,
+                })
+              }}>
+                <IconComponent 
+                  size={24} 
+                  color={isQRScanner && isActive ? SENAC_COLORS.primary : getIconColor(tab.name)} 
+                />
+              </View>
               {!isCollapsed && (
                 <Text className={`ml-3 text-base font-medium ${
                   isActive 
-                    ? (isDarkMode ? 'text-white' : 'text-blue-600')
+                    ? (isQRScanner ? 'text-white' : (isDarkMode ? 'text-white' : 'text-blue-600'))
                     : (isDarkMode ? 'text-gray-300' : 'text-gray-600')
                 }`}>
                   {tab.label}

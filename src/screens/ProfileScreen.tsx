@@ -32,7 +32,7 @@ type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { user, getCurrentUser, logout, isDarkMode, toggleTheme, updateProfile, getProfile } = useAuth();
+  const { user, getCurrentUser, logout, isDarkMode, updateProfile, getProfile } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
@@ -197,72 +197,6 @@ const ProfileScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-          </View>
-
-
-          <View className="space-y-4">
-
-            <TouchableOpacity
-              onPress={navigateToChangePassword}
-              className={`mb-4 flex-row items-center justify-between p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}
-            >
-              <View className="flex-row items-center ">
-                                 <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                   style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                   <Lock size={20} color={SENAC_COLORS.primary} />
-                 </View>
-                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Alterar Senha
-                </Text>
-              </View>
-              <ArrowRight size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-            </TouchableOpacity>
-
-
-            {user.is_superuser && (
-              <TouchableOpacity
-                onPress={navigateToUserManagement}
-                className={`mb-4 flex-row items-center justify-between p-4 rounded-2xl ${
-                  isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-                } backdrop-blur-sm border border-gray-200/20`}
-              >
-                <View className="flex-row items-center">
-                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                    style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                    <Shield size={20} color={SENAC_COLORS.secondary} />
-                  </View>
-                  <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Gerenciar Usuários
-                  </Text>
-                </View>
-                <ArrowRight size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-              </TouchableOpacity>
-            )}
-
-
-            <TouchableOpacity
-              onPress={toggleTheme}
-              className={`flex-row items-center justify-between p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}
-            >
-              <View className="flex-row items-center">
-                <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                  style={{ backgroundColor: `${isDarkMode ? SENAC_COLORS.secondary : SENAC_COLORS.primary}20` }}>
-                  {isDarkMode ? (
-                    <Sun size={20} color={SENAC_COLORS.secondary} />
-                  ) : (
-                    <Moon size={20} color={SENAC_COLORS.primary} />
-                  )}
-                </View>
-                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
-                </Text>
-              </View>
-              <ArrowRight size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-            </TouchableOpacity>
           </View>
 
 

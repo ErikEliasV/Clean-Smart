@@ -12,13 +12,11 @@ interface User {
   };
 }
 
-// Grupos do sistema
 export const USER_GROUPS = {
   ZELADORIA: 1,
   CORPO_DOCENTE: 2,
 } as const;
 
-// Funções helper para verificar permissões
 export const isAdmin = (user: User | null): boolean => {
   return user?.is_superuser === true;
 };
@@ -163,7 +161,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         
-        // Se a URL da imagem for relativa, converter para absoluta
         if (data.user_data?.profile?.profile_picture && !data.user_data.profile.profile_picture.startsWith('http')) {
           data.user_data.profile.profile_picture = `https://zeladoria.tsr.net.br${data.user_data.profile.profile_picture}`;
         }
@@ -219,7 +216,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const userData = await response.json();
         
-        // Se a URL da imagem for relativa, converter para absoluta
         if (userData.profile?.profile_picture && !userData.profile.profile_picture.startsWith('http')) {
           userData.profile.profile_picture = `https://zeladoria.tsr.net.br${userData.profile.profile_picture}`;
         }
@@ -393,7 +389,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const profile = await response.json();
         
-        // Se a URL da imagem for relativa, converter para absoluta
         if (profile.profile_picture && !profile.profile_picture.startsWith('http')) {
           profile.profile_picture = `https://zeladoria.tsr.net.br${profile.profile_picture}`;
         }
@@ -424,7 +419,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let response;
       
       if (imageUri) {
-        // Upload de nova imagem
         const formData = new FormData();
         formData.append('profile_picture', {
           uri: imageUri,
@@ -436,12 +430,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           method: 'PUT',
           headers: {
             'Authorization': `Token ${token}`,
-            // Não definir Content-Type para FormData - o React Native define automaticamente
           },
           body: formData,
         });
       } else {
-        // Remover imagem
         response = await fetch('https://zeladoria.tsr.net.br/api/accounts/profile/', {
           method: 'PUT',
           headers: {
@@ -455,12 +447,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok) {
         const profile = await response.json();
         
-        // Se a URL da imagem for relativa, converter para absoluta
         if (profile.profile_picture && !profile.profile_picture.startsWith('http')) {
           profile.profile_picture = `https://zeladoria.tsr.net.br${profile.profile_picture}`;
         }
         
-        // Atualizar o usuário local com a nova foto
         if (user) {
           const updatedUser = { ...user, profile };
           setUser(updatedUser);
