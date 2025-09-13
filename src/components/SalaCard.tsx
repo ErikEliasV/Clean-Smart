@@ -42,7 +42,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
   };
 
   const handleDelete = () => {
-    if (!user?.is_staff && !user?.is_superuser) {
+    if (!user?.is_superuser) {
       Alert.alert('Erro', 'Apenas administradores podem excluir salas');
       return;
     }
@@ -56,7 +56,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
           text: 'Excluir',
           style: 'destructive',
           onPress: async () => {
-            const result = await deleteSala(Number(sala.id));
+            const result = await deleteSala(sala.qr_code_id);
             if (result.success) {
               Alert.alert('Sucesso', 'Sala excluída com sucesso!');
             } else {
@@ -126,7 +126,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
             </TouchableOpacity>
           )}
           
-          {(user?.is_staff || user?.is_superuser) && onEdit && (
+          {user?.is_superuser && onEdit && (
             <TouchableOpacity
               onPress={() => onEdit(sala)}
               className="p-2 rounded-full"
@@ -136,7 +136,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
             </TouchableOpacity>
           )}
           
-          {(user?.is_staff || user?.is_superuser) && (
+          {user?.is_superuser && (
             <TouchableOpacity
               onPress={handleDelete}
               className="p-2 rounded-full"

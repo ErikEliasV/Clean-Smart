@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
 import type { ProfileStackParamList } from '../types/navigation';
+import ProfileImagePicker from '../components/ProfileImagePicker';
 import { 
   User, 
   Mail, 
@@ -31,8 +32,10 @@ type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { user, getCurrentUser, logout, isDarkMode, toggleTheme } = useAuth();
+  const { user, getCurrentUser, logout, isDarkMode, updateProfile, getProfile } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
 
   const handleRefreshUser = async () => {
     setIsRefreshing(true);
@@ -68,6 +71,38 @@ const ProfileScreen: React.FC = () => {
 
   const navigateToUserManagement = () => {
     navigation.navigate('UserManagement');
+  };
+
+  const handleImageSelected = async (imageUri: string) => {
+    setIsUpdatingProfile(true);
+    try {
+      const result = await updateProfile(imageUri);
+      if (result.success) {
+        Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
+      } else {
+        Alert.alert('Erro', result.error || 'Erro ao atualizar foto de perfil');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao atualizar foto de perfil');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleImageRemoved = async () => {
+    setIsUpdatingProfile(true);
+    try {
+      const result = await updateProfile(null);
+      if (result.success) {
+        Alert.alert('Sucesso', 'Foto de perfil removida com sucesso!');
+      } else {
+        Alert.alert('Erro', result.error || 'Erro ao remover foto de perfil');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao remover foto de perfil');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
   };
 
   if (!user) {
@@ -115,35 +150,27 @@ const ProfileScreen: React.FC = () => {
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
             <View className="items-center mb-6">
-              <View className={`w-20 h-20 rounded-full items-center justify-center mb-4 ${
-                isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
-              }`}>
-                <User size={40} color={SENAC_COLORS.primary} />
-              </View>
-              <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <ProfileImagePicker
+                currentImageUri={user.profile?.profile_picture}
+                onImageSelected={handleImageSelected}
+                onImageRemoved={handleImageRemoved}
+                size={100}
+              />
+              <Text className={`text-2xl font-bold mt-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {user.username}
               </Text>
               <View className="flex-row items-center mt-2">
                 {user.is_superuser ? (
                   <Crown size={18} color={SENAC_COLORS.secondary} />
-                ) : user.is_staff ? (
-                  <Shield size={18} color={SENAC_COLORS.primary} />
                 ) : (
                   <User size={18} color={SENAC_COLORS.primary} />
                 )}
                 <Text className={`ml-2 text-sm font-medium`} style={{
                   color: user.is_superuser 
                     ? SENAC_COLORS.secondary 
-                    : user.is_staff 
-                    ? SENAC_COLORS.primary 
                     : SENAC_COLORS.primary
                 }}>
-                  {user.is_superuser 
-                    ? 'Super Admin' 
-                    : user.is_staff 
-                    ? 'Administrador' 
-                    : 'Usuário'
-                  }
+                  {user.is_superuser ? 'Super Admin' : 'Usuário'}
                 </Text>
               </View>
             </View>
@@ -170,72 +197,6 @@ const ProfileScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-          </View>
-
-
-          <View className="space-y-4">
-
-            <TouchableOpacity
-              onPress={navigateToChangePassword}
-              className={`mb-4 flex-row items-center justify-between p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}
-            >
-              <View className="flex-row items-center ">
-                                 <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                   style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                   <Lock size={20} color={SENAC_COLORS.primary} />
-                 </View>
-                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Alterar Senha
-                </Text>
-              </View>
-              <ArrowRight size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-            </TouchableOpacity>
-
-
-            {(user.is_staff || user.is_superuser) && (
-              <TouchableOpacity
-                onPress={navigateToUserManagement}
-                className={`mb-4 flex-row items-center justify-between p-4 rounded-2xl ${
-                  isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-                } backdrop-blur-sm border border-gray-200/20`}
-              >
-                <View className="flex-row items-center">
-                                     <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                     style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                     <Shield size={20} color={SENAC_COLORS.secondary} />
-                   </View>
-                  <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Gerenciar Usuários
-                  </Text>
-                </View>
-                <ArrowRight size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-              </TouchableOpacity>
-            )}
-
-
-            <TouchableOpacity
-              onPress={toggleTheme}
-              className={`flex-row items-center justify-between p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}
-            >
-              <View className="flex-row items-center">
-                <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                  style={{ backgroundColor: `${isDarkMode ? SENAC_COLORS.secondary : SENAC_COLORS.primary}20` }}>
-                  {isDarkMode ? (
-                    <Sun size={20} color={SENAC_COLORS.secondary} />
-                  ) : (
-                    <Moon size={20} color={SENAC_COLORS.primary} />
-                  )}
-                </View>
-                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
-                </Text>
-              </View>
-              <ArrowRight size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-            </TouchableOpacity>
           </View>
 
 

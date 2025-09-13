@@ -8,10 +8,11 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, Filter, Calendar, User, MapPin } from 'lucide-react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, canManageSalas } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { LimpezaRegistro, Sala } from '../types/salas';
 import { SENAC_COLORS } from '../constants/colors';
@@ -26,11 +27,13 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
   const [registros, setRegistros] = useState<LimpezaRegistro[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedSalaId, setSelectedSalaId] = useState<number | undefined>(route?.params?.salaId);
+  const [selectedSalaId, setSelectedSalaId] = useState<number | undefined>(
+    route?.params?.salaId ? salas.find(s => s.qr_code_id === route.params.salaId)?.id : undefined
+  );
   const [showSalaFilter, setShowSalaFilter] = useState(false);
 
   const loadRegistros = async (salaId?: number) => {
-    if (!user?.is_staff && !user?.is_superuser) {
+    if (!canManageSalas(user)) {
       Alert.alert('Erro', 'Apenas administradores podem acessar os registros de limpeza');
       navigation.goBack();
       return;
@@ -190,9 +193,9 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
   );
 
   return (
-    <View className={`flex-1 ${
+    <SafeAreaView className={`flex-1 ${
       isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
-    }`}>
+    }`} edges={['top']}>
       {/* Header */}
       <View className={`flex-row items-center justify-between p-4 border-b ${
         isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -269,7 +272,7 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

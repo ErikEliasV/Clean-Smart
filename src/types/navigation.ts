@@ -1,29 +1,18 @@
-export type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-  Profile: undefined;
-};
-
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   ChangePassword: undefined;
   UserManagement: undefined;
 };
 
-export type SalasStackParamList = {
-  SalasMain: undefined;
-  RegistrosLimpeza: {
-    salaId?: number;
-    salaNome?: string;
-  };
-  LimpezaProcesso: {
-    salaId: number;
-    salaNome: string;
-  };
+export type SettingsStackParamList = {
+  SettingsMain: undefined;
+  ChangePassword: undefined;
+  UserManagement: undefined;
 };
 
-export type TabParamList = {
-  Salas: undefined;
-  Home: undefined;
-  Profile: undefined;
+export type SalasStackParamList = {
+  SalasMain: undefined;
+  SalaForm: { sala?: { id: string } };
+  LimpezaProcesso: { salaId: string; salaNome?: string };
+  RegistrosLimpeza: { salaId: string; salaNome?: string };
 };

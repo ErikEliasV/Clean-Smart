@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, isAdmin, isZelador, isCorpoDocente } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { 
   User, 
@@ -48,6 +48,7 @@ const InformationScreen: React.FC = () => {
       ]
     );
   };
+
 
   const salasStats = {
     total: salas.length,
@@ -100,15 +101,26 @@ const InformationScreen: React.FC = () => {
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
             <View className="flex-row items-center">
-              <View className={`w-16 h-16 rounded-full items-center justify-center mr-4 ${
-                isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
-              }`}>
-                {user?.is_superuser ? (
-                  <Crown size={32} color={SENAC_COLORS.secondary} />
-                ) : user?.is_staff ? (
-                  <Shield size={32} color={SENAC_COLORS.primary} />
+              {/* Avatar do usuário */}
+              <View className="mr-4">
+                {user?.profile?.profile_picture ? (
+                  <Image
+                    source={{ uri: user.profile.profile_picture }}
+                    className="w-16 h-16 rounded-full"
+                    style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
+                  />
                 ) : (
-                  <User size={32} color={SENAC_COLORS.primary} />
+                  <View className={`w-16 h-16 rounded-full items-center justify-center ${
+                    isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
+                  }`}>
+                    {user?.is_superuser ? (
+                      <Crown size={32} color={SENAC_COLORS.secondary} />
+                    ) : isZelador(user) ? (
+                      <Shield size={32} color={SENAC_COLORS.primary} />
+                    ) : (
+                      <User size={32} color={SENAC_COLORS.primary} />
+                    )}
+                  </View>
                 )}
               </View>
               <View className="flex-1">
@@ -124,7 +136,7 @@ const InformationScreen: React.FC = () => {
                       <Text style={{ color: SENAC_COLORS.secondary }} className="text-xs font-medium">Super Admin</Text>
                     </View>
                   )}
-                  {user?.is_staff && (
+                  {(isZelador(user) || isAdmin(user)) && (
                     <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
                       <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Admin</Text>
                     </View>
@@ -243,43 +255,6 @@ const InformationScreen: React.FC = () => {
           )}
 
 
-          <View className={`p-6 rounded-3xl mb-8 ${
-            isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-          } backdrop-blur-sm border border-gray-200/20`}>
-            <View className="flex-row items-center mb-4">
-              <BarChart3 size={24} color={SENAC_COLORS.primary} />
-              <Text className={`text-lg font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Sistema de Zeladoria
-              </Text>
-            </View>
-            <View className="space-y-3">
-              <View className="flex-row justify-between">
-                <Text className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Versão do App
-                </Text>
-                <Text className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  1.0.0
-                </Text>
-              </View>
-              <View className="flex-row justify-between">
-                <Text className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Status
-                </Text>
-                <View className="flex-row items-center">
-                  <View className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-                  <Text className="text-green-600 font-medium">Online</Text>
-                </View>
-              </View>
-              <View className="flex-row justify-between">
-                <Text className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Última Atualização
-                </Text>
-                <Text className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Hoje
-                </Text>
-              </View>
-            </View>
-          </View>
 
 
           <TouchableOpacity
@@ -294,6 +269,7 @@ const InformationScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
     </SafeAreaView>
   );
 };

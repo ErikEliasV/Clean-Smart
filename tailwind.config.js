@@ -15,9 +15,9 @@ module.exports = {
       keyframes: {
         flip: {
           '0%': { transform: 'rotateY(0deg)' },
-          '50%': { transform: 'rotateY(90deg)' },     // até sumir
-          '50.01%': { transform: 'rotateY(90deg)' }, // troca a imagem aqui
-          '100%': { transform: 'rotateY(0deg)' },    // volta mostrando
+          '50%': { transform: 'rotateY(90deg)' },
+          '50.01%': { transform: 'rotateY(90deg)' },
+          '100%': { transform: 'rotateY(0deg)' },
         },
       },
       animation: {

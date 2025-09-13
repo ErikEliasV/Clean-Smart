@@ -28,7 +28,6 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
 
   const { salaId, salaNome } = route.params;
 
-  // Timer para atualizar o tempo decorrido
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
