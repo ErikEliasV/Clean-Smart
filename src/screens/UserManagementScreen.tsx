@@ -13,7 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { useAuth, USER_GROUPS } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroups } from '../contexts/GroupsContext';
 import type { ProfileStackParamList } from '../types/navigation';
 import { 
   Users, 
@@ -45,6 +46,7 @@ type UserManagementScreenNavigationProp = StackNavigationProp<ProfileStackParamL
 const UserManagementScreen: React.FC = () => {
   const navigation = useNavigation<UserManagementScreenNavigationProp>();
   const { user: currentUser, listUsers, createUser, isDarkMode } = useAuth();
+  const { groups, carregarGrupos, getGroupName } = useGroups();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -56,7 +58,7 @@ const UserManagementScreen: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSuperuser, setIsSuperuser] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<number[]>([]);
 
   const getImageUrl = (profilePicture: string | null): string | null => {
     if (!profilePicture || profilePicture.trim() === '') {
@@ -72,6 +74,7 @@ const UserManagementScreen: React.FC = () => {
 
   useEffect(() => {
     loadUsers();
+    carregarGrupos();
   }, []);
 
   const loadUsers = async () => {
@@ -107,8 +110,8 @@ const UserManagementScreen: React.FC = () => {
       is_superuser: isSuperuser,
     };
     
-    if (!isSuperuser && selectedGroup !== null) {
-      userData.groups = [selectedGroup];
+    if (selectedGroups.length > 0) {
+      userData.groups = selectedGroups;
     }
     
     const result = await createUser(userData);
@@ -130,7 +133,7 @@ const UserManagementScreen: React.FC = () => {
     setNewPassword('');
     setConfirmPassword('');
     setIsSuperuser(false);
-    setSelectedGroup(null);
+    setSelectedGroups([]);
   };
 
   const openUserDetails = (user: User) => {
@@ -138,27 +141,23 @@ const UserManagementScreen: React.FC = () => {
     setShowUserDetails(true);
   };
 
-  const getGroupName = (groupId: number): string => {
-    switch (groupId) {
-      case USER_GROUPS.ZELADORIA:
-        return 'Zeladoria';
-      case USER_GROUPS.CORPO_DOCENTE:
-        return 'Corpo Docente';
-      default:
-        return 'Usuário';
-    }
-  };
-
   const getUserRole = (user: User): string => {
+    let roles: string[] = [];
+    
     if (user.is_superuser) {
-      return 'Administrador';
+      roles.push('Administrador');
     }
     
     if (user.groups && user.groups.length > 0) {
-      return getGroupName(user.groups[0]);
+      const groupNames = user.groups.map(groupId => getGroupName(groupId));
+      roles.push(...groupNames);
     }
     
-    return 'Usuário';
+    if (roles.length === 0) {
+      roles.push('Usuário');
+    }
+    
+    return roles.join(', ');
   };
 
   const getUserRoleColor = (user: User): string => {
@@ -167,13 +166,11 @@ const UserManagementScreen: React.FC = () => {
     }
     
     if (user.groups && user.groups.length > 0) {
-      switch (user.groups[0]) {
-        case USER_GROUPS.ZELADORIA:
-          return '#10B981';
-        case USER_GROUPS.CORPO_DOCENTE:
-          return '#3B82F6';
-        default:
-          return SENAC_COLORS.primary;
+      const firstGroupName = getGroupName(user.groups[0]);
+      if (firstGroupName === 'Zeladoria') {
+        return '#10B981';
+      } else if (firstGroupName === 'Solicitante de Serviços') {
+        return '#3B82F6';
       }
     }
     
@@ -253,7 +250,6 @@ const UserManagementScreen: React.FC = () => {
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
-                    {/* Avatar do usuário */}
                     <View className="mr-4">
                       {(() => {
                         const imageUrl = getImageUrl(user.profile?.profile_picture);
@@ -402,11 +398,9 @@ const UserManagementScreen: React.FC = () => {
                   Tipo de Usuário
                 </Text>
                 
-                {/* Super Administrador */}
                 <TouchableOpacity
                   onPress={() => {
-                    setIsSuperuser(true);
-                    setSelectedGroup(null);
+                    setIsSuperuser(!isSuperuser);
                   }}
                   className="flex-row items-center mb-3 p-3 rounded-xl border"
                   style={{
@@ -429,62 +423,77 @@ const UserManagementScreen: React.FC = () => {
                     </Text>
                   </View>
                 </TouchableOpacity>
+                
+                {groups.length > 0 && (
+                  <>
+                    <Text className={`font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Grupos adicionais (pode selecionar múltiplos):
+                    </Text>
+                    <Text className={`text-xs mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {isSuperuser 
+                        ? 'Administradores podem ter grupos adicionais para funcionalidades específicas'
+                        : 'Selecione os grupos que o usuário participará'
+                      }
+                    </Text>
+                    {groups.map((group) => {
+                      const isSelected = selectedGroups.includes(group.id);
+                      const getGroupIcon = (groupName: string) => {
+                        if (groupName === 'Zeladoria') return Shield;
+                        if (groupName === 'Solicitante de Serviços') return User;
+                        return User;
+                      };
+                      const getGroupColor = (groupName: string) => {
+                        if (groupName === 'Zeladoria') return '#10B981';
+                        if (groupName === 'Solicitante de Serviços') return '#3B82F6';
+                        return '#6B7280';
+                      };
+                      const getGroupDescription = (groupName: string) => {
+                        if (groupName === 'Zeladoria') return 'Gerencia salas e registros de limpeza';
+                        if (groupName === 'Solicitante de Serviços') return 'Visualiza salas e pode solicitar limpeza';
+                        return 'Acesso específico do grupo';
+                      };
 
-                {/* Zeladoria */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setIsSuperuser(false);
-                    setSelectedGroup(USER_GROUPS.ZELADORIA);
-                  }}
-                  className="flex-row items-center mb-3 p-3 rounded-xl border"
-                  style={{
-                    backgroundColor: selectedGroup === USER_GROUPS.ZELADORIA ? '#10B98110' : 'transparent',
-                    borderColor: selectedGroup === USER_GROUPS.ZELADORIA ? '#10B981' : (isDarkMode ? '#374151' : '#D1D5DB')
-                  }}
-                >
-                  <View className={`w-5 h-5 border rounded mr-3 ${
-                    selectedGroup === USER_GROUPS.ZELADORIA ? 'bg-green-500 border-green-500' : 'border-gray-400'
-                  }`}>
-                    {selectedGroup === USER_GROUPS.ZELADORIA && <Check size={16} color="white" />}
-                  </View>
-                  <Shield size={20} color={selectedGroup === USER_GROUPS.ZELADORIA ? '#10B981' : (isDarkMode ? '#9CA3AF' : '#6B7280')} />
-                  <View className="ml-3 flex-1">
-                    <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      Zeladoria
-                    </Text>
-                    <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Gerencia salas e registros de limpeza
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* Corpo Docente */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setIsSuperuser(false);
-                    setSelectedGroup(USER_GROUPS.CORPO_DOCENTE);
-                  }}
-                  className="flex-row items-center mb-3 p-3 rounded-xl border"
-                  style={{
-                    backgroundColor: selectedGroup === USER_GROUPS.CORPO_DOCENTE ? '#3B82F610' : 'transparent',
-                    borderColor: selectedGroup === USER_GROUPS.CORPO_DOCENTE ? '#3B82F6' : (isDarkMode ? '#374151' : '#D1D5DB')
-                  }}
-                >
-                  <View className={`w-5 h-5 border rounded mr-3 ${
-                    selectedGroup === USER_GROUPS.CORPO_DOCENTE ? 'bg-blue-500 border-blue-500' : 'border-gray-400'
-                  }`}>
-                    {selectedGroup === USER_GROUPS.CORPO_DOCENTE && <Check size={16} color="white" />}
-                  </View>
-                  <User size={20} color={selectedGroup === USER_GROUPS.CORPO_DOCENTE ? '#3B82F6' : (isDarkMode ? '#9CA3AF' : '#6B7280')} />
-                  <View className="ml-3 flex-1">
-                    <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      Corpo Docente
-                    </Text>
-                    <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Visualiza salas e pode solicitar limpeza
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                      const IconComponent = getGroupIcon(group.name);
+                      const groupColor = getGroupColor(group.name);
+                      
+                      return (
+                        <TouchableOpacity
+                          key={group.id}
+                          onPress={() => {
+                            if (isSelected) {
+                              setSelectedGroups(prev => prev.filter(id => id !== group.id));
+                            } else {
+                              setSelectedGroups(prev => [...prev, group.id]);
+                            }
+                          }}
+                          className="flex-row items-center mb-3 p-3 rounded-xl border"
+                          style={{
+                            backgroundColor: isSelected ? `${groupColor}10` : 'transparent',
+                            borderColor: isSelected ? groupColor : (isDarkMode ? '#374151' : '#D1D5DB')
+                          }}
+                        >
+                          <View className={`w-5 h-5 border rounded mr-3 ${
+                            isSelected ? `bg-[${groupColor}] border-[${groupColor}]` : 'border-gray-400'
+                          }`} style={{
+                            backgroundColor: isSelected ? groupColor : 'transparent',
+                            borderColor: isSelected ? groupColor : '#9CA3AF'
+                          }}>
+                            {isSelected && <Check size={16} color="white" />}
+                          </View>
+                          <IconComponent size={20} color={isSelected ? groupColor : (isDarkMode ? '#9CA3AF' : '#6B7280')} />
+                          <View className="ml-3 flex-1">
+                            <Text className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {group.name}
+                            </Text>
+                            <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              {getGroupDescription(group.name)}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </>
+                )}
               </View>
             </ScrollView>
 
@@ -538,7 +547,6 @@ const UserManagementScreen: React.FC = () => {
 
             {selectedUser && (
               <View>
-                {/* Avatar do usuário no modal */}
                 <View className="items-center mb-6">
                   {(() => {
                     const imageUrl = getImageUrl(selectedUser.profile?.profile_picture);
@@ -591,13 +599,19 @@ const UserManagementScreen: React.FC = () => {
                     {selectedUser.is_superuser && (
                       <Text className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         Acesso total ao sistema
+                        {selectedUser.groups && selectedUser.groups.length > 0 && 
+                          ` + ${selectedUser.groups.length} grupo(s) adicional(is)`
+                        }
                       </Text>
                     )}
                     {!selectedUser.is_superuser && selectedUser.groups && selectedUser.groups.length > 0 && (
                       <Text className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {selectedUser.groups[0] === USER_GROUPS.ZELADORIA 
-                          ? 'Gerencia salas e registros de limpeza'
-                          : 'Visualiza salas e pode solicitar limpeza'
+                        {selectedUser.groups.length === 1 
+                          ? (getGroupName(selectedUser.groups[0]) === 'Zeladoria'
+                              ? 'Gerencia salas e registros de limpeza'
+                              : 'Visualiza salas e pode solicitar limpeza'
+                            )
+                          : `${selectedUser.groups.length} grupos selecionados`
                         }
                       </Text>
                     )}

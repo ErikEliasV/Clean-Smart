@@ -57,7 +57,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         shadowRadius: 4,
       }}
     >
-      {/* Header com botão de toggle */}
       <View className="flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         {!isCollapsed && (
           <Text className={`text-lg font-bold ${
@@ -79,7 +78,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Navegação */}
       <View className="flex-1 pt-4">
         {tabs.map((tab) => {
           const IconComponent = tab.icon;

@@ -174,7 +174,6 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
           </View>
         )}
 
-        {/* Botão de remover foto */}
         {currentImageUri && !isLoading && (
           <TouchableOpacity
             onPress={handleRemoveImage}

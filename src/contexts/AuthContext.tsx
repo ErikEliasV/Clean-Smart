@@ -12,29 +12,36 @@ interface User {
   };
 }
 
-export const USER_GROUPS = {
-  ZELADORIA: 1,
-  CORPO_DOCENTE: 2,
-} as const;
-
 export const isAdmin = (user: User | null): boolean => {
   return user?.is_superuser === true;
 };
 
-export const isZelador = (user: User | null): boolean => {
-  return user?.groups?.includes(USER_GROUPS.ZELADORIA) === true;
+export const isZelador = (user: User | null, groups?: any[]): boolean => {
+  if (!user?.groups || !groups) return false;
+  const zeladoriaGroup = groups.find(g => g.name === 'Zeladoria');
+  return zeladoriaGroup ? user.groups.includes(zeladoriaGroup.id) : false;
 };
 
-export const isCorpoDocente = (user: User | null): boolean => {
-  return user?.groups?.includes(USER_GROUPS.CORPO_DOCENTE) === true;
+export const isSolicitanteServico = (user: User | null, groups?: any[]): boolean => {
+  if (!user?.groups || !groups) return false;
+  const solicitanteGroup = groups.find(g => g.name === 'Solicitante de Serviços');
+  return solicitanteGroup ? user.groups.includes(solicitanteGroup.id) : false;
+};
+
+export const isCorpoDocente = (user: User | null, groups?: any[]): boolean => {
+  return isSolicitanteServico(user, groups);
 };
 
 export const canManageSalas = (user: User | null): boolean => {
-  return isAdmin(user) || isZelador(user);
+  return isAdmin(user);
 };
 
-export const canViewAllSalas = (user: User | null): boolean => {
-  return isAdmin(user) || isZelador(user) || isCorpoDocente(user);
+export const canViewAllSalas = (user: User | null, groups?: any[]): boolean => {
+  return isAdmin(user) || isZelador(user, groups) || isSolicitanteServico(user, groups);
+};
+
+export const canViewLimpezaHistory = (user: User | null): boolean => {
+  return isAdmin(user);
 };
 
 interface CreateUserData {
@@ -68,6 +75,8 @@ interface AuthContextType {
   isDarkMode: boolean;
   toggleTheme: () => void;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  isUserInGroup: (groupId: number) => boolean;
+  getUserGroupNames: () => string[];
   logout: () => Promise<void>;
   getCurrentUser: () => Promise<{ success: boolean; user?: User; error?: string }>;
   listUsers: () => Promise<{ success: boolean; users?: User[]; error?: string }>;
@@ -476,6 +485,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return user?.is_superuser || false;
   };
 
+  const isUserInGroup = (groupId: number): boolean => {
+    return user?.groups?.includes(groupId) === true;
+  };
+
+  const getUserGroupNames = (): string[] => {
+    if (!user?.groups) return [];
+    return user.groups.map(groupId => `Grupo ${groupId}`);
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -492,6 +510,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getProfile,
     updateProfile,
     isAdmin,
+    isUserInGroup,
+    getUserGroupNames,
   };
 
   return (
