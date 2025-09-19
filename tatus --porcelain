@@ -1,0 +1,33 @@
+warning: in the working copy of 'App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/SalaCard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/SalaForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/contexts/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/contexts/SalasContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/navigation/AppNavigator.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/screens/LimpezaProcessoScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/screens/ProfileScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/screens/RegistrosLimpezaScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/screens/SalasScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/screens/UserManagementScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/types/navigation.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/types/salas.ts', LF will be replaced by CRLF the next time Git touches it
+ App.tsx                                |  26 [32m+[m[31m-[m
+ src/components/ProfileImagePicker.tsx  |   1 [31m-[m
+ src/components/SalaCard.tsx            | 483 [32m+++++++++++++++++++++++++[m[31m--------[m
+ src/components/SalaForm.tsx            | 359 [32m+++++++++++++++++++++++[m[31m-[m
+ src/components/Sidebar.tsx             |   2 [31m-[m
+ src/contexts/AuthContext.tsx           |  44 [32m++[m[31m-[m
+ src/contexts/SalasContext.tsx          | 460 [32m+++++++++++++++++++++++++++++[m[31m--[m
+ src/hooks/useResponsive.ts             |   1 [31m-[m
+ src/navigation/AppNavigator.tsx        |  70 [32m++++[m[31m-[m
+ src/screens/InformationScreen.tsx      |   1 [31m-[m
+ src/screens/LimpezaProcessoScreen.tsx  | 431 [32m+++++++++++++++++++++++++++[m[31m--[m
+ src/screens/LoginScreen.tsx            |  55 [32m+++[m[31m-[m
+ src/screens/ProfileScreen.tsx          |  40 [32m++[m[31m-[m
+ src/screens/RegistrosLimpezaScreen.tsx | 177 [32m+++++++++++[m[31m-[m
+ src/screens/SalasScreen.tsx            | 108 [32m+++++++[m[31m-[m
+ src/screens/SettingsScreen.tsx         |   5 [31m-[m
+ src/screens/UserManagementScreen.tsx   | 190 [32m+++++++[m[31m------[m
+ src/types/navigation.ts                |   5 [32m+[m[31m-[m
+ src/types/salas.ts                     |  50 [32m+++[m[31m-[m
+ 19 files changed, 2172 insertions(+), 336 deletions(-)

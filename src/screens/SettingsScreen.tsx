@@ -62,7 +62,6 @@ const SettingsScreen: React.FC = () => {
   return (
     <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
       <View className="flex-1 px-6">
-        {/* Header */}
         <View className="flex-row items-center justify-between py-6">
           <View className="flex-row items-center">
             <TouchableOpacity
@@ -78,7 +77,6 @@ const SettingsScreen: React.FC = () => {
         </View>
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* Informações do Usuário */}
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
@@ -90,7 +88,6 @@ const SettingsScreen: React.FC = () => {
             </View>
             
             <View className="flex-row items-center">
-              {/* Avatar do usuário */}
               <View className="mr-4">
                 {user?.profile?.profile_picture ? (
                   <Image
@@ -120,7 +117,6 @@ const SettingsScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Configurações de Aparência */}
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
@@ -147,7 +143,6 @@ const SettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Configurações de Conta */}
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>

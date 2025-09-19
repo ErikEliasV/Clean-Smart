@@ -6,12 +6,14 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
-  Image
+  Image,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationsContext';
 import type { ProfileStackParamList } from '../types/navigation';
 import ProfileImagePicker from '../components/ProfileImagePicker';
 import { 
@@ -21,7 +23,7 @@ import {
   Crown, 
   Lock, 
   ArrowRight, 
-  RefreshCw,
+  Bell,
   LogOut,
   Sun,
   Moon
@@ -33,6 +35,7 @@ type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, getCurrentUser, logout, isDarkMode, updateProfile, getProfile } = useAuth();
+  const { notificacoesNaoLidas, refreshNotificacoes } = useNotifications();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
@@ -40,11 +43,16 @@ const ProfileScreen: React.FC = () => {
   const handleRefreshUser = async () => {
     setIsRefreshing(true);
     const result = await getCurrentUser();
+    await refreshNotificacoes();
     setIsRefreshing(false);
 
     if (!result.success) {
       Alert.alert('Erro', result.error || 'Erro ao atualizar dados do usuário');
     }
+  };
+
+  const handleNotificationPress = () => {
+    navigation.navigate('Notifications');
   };
 
   const handleLogout = () => {
@@ -120,7 +128,18 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefreshUser}
+            colors={[SENAC_COLORS.primary]}
+            tintColor={SENAC_COLORS.primary}
+          />
+        }
+      >
         <View className="px-6 py-6 pb-8">
 
           <View className="flex-row items-center justify-between mb-8">
@@ -133,15 +152,20 @@ const ProfileScreen: React.FC = () => {
                         </Text>
                       </View>
             <TouchableOpacity
-              onPress={handleRefreshUser}
-              disabled={isRefreshing}
-              className="p-2"
+              onPress={handleNotificationPress}
+              className="p-2 relative"
             >
-              <RefreshCw 
+              <Bell 
                 size={24} 
                 color={isDarkMode ? '#9CA3AF' : '#6B7280'} 
-                style={{ transform: [{ rotate: isRefreshing ? '360deg' : '0deg' }] }}
               />
+              {notificacoesNaoLidas > 0 && (
+                <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[20px] h-5 items-center justify-center">
+                  <Text className="text-white text-xs font-bold">
+                    {notificacoesNaoLidas > 99 ? '99+' : notificacoesNaoLidas}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 

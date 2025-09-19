@@ -101,7 +101,6 @@ const InformationScreen: React.FC = () => {
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
             <View className="flex-row items-center">
-              {/* Avatar do usuário */}
               <View className="mr-4">
                 {user?.profile?.profile_picture ? (
                   <Image
