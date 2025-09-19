@@ -8,11 +8,14 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, X } from 'lucide-react-native';
 import { useAuth, canManageSalas } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
+import { useQRCode } from '../contexts/QRCodeContext';
 import { Sala } from '../types/salas';
 import SalaCard from '../components/SalaCard';
 import SalaForm from '../components/SalaForm';
@@ -24,19 +27,69 @@ interface SalasScreenProps {
 
 const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   const { isDarkMode, user } = useAuth();
-  const { salas, isLoading, listSalas } = useSalas();
+  const { salas, isLoading, listSalas, getSala } = useSalas();
+  const { qrCodeData, clearQRCodeData } = useQRCode();
   const [showForm, setShowForm] = useState(false);
   const [editingSala, setEditingSala] = useState<Sala | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'limpa' | 'pendente'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSalaLimpaModal, setShowSalaLimpaModal] = useState(false);
+  const [salaLimpaData, setSalaLimpaData] = useState<{ nome: string; qrCode: string } | null>(null);
 
   useEffect(() => {
     loadSalas();
   }, []);
 
+  useEffect(() => {
+    if (qrCodeData) {
+      const buscarDadosSala = async () => {
+        try {
+          const result = await getSala(qrCodeData);
+          
+          if (result.success && result.sala) {
+            if (result.sala.status_limpeza === 'Limpa') {
+              setSalaLimpaData({
+                nome: result.sala.nome_numero,
+                qrCode: qrCodeData
+              });
+              setShowSalaLimpaModal(true);
+            } else {
+              navigation.navigate('LimpezaProcesso', {
+                salaId: qrCodeData,
+                salaNome: result.sala.nome_numero,
+                qrCodeScanned: true
+              });
+            }
+          } else {
+            navigation.navigate('LimpezaProcesso', {
+              salaId: qrCodeData,
+              salaNome: 'Sala Escaneada',
+              qrCodeScanned: true
+            });
+          }
+        } catch (error) {
+          navigation.navigate('LimpezaProcesso', {
+            salaId: qrCodeData,
+            salaNome: 'Sala Escaneada',
+            qrCodeScanned: true
+          });
+        }
+        
+        clearQRCodeData();
+      };
+      
+      buscarDadosSala();
+    }
+  }, [qrCodeData, navigation, clearQRCodeData, getSala]);
+
   const loadSalas = async () => {
     await listSalas();
+  };
+
+  const handleFecharModalSalaLimpa = () => {
+    setShowSalaLimpaModal(false);
+    setSalaLimpaData(null);
   };
 
   const onRefresh = useCallback(async () => {
@@ -174,7 +227,6 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
-      {/* Header */}
       <View className={`px-4 py-4 border-b ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
         }`}>
         <View className="flex-row items-center justify-between mb-4">
@@ -198,7 +250,6 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
           )}
         </View>
 
-        {/* Barra de Pesquisa */}
         <View className="mb-4">
           <View className="relative">
             <TextInput
@@ -222,14 +273,12 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Filtros */}
         <View className="flex-row">
           <FilterButton status="all" label="Todas" count={statusCounts.total} />
           <FilterButton status="limpa" label="Limpas" count={statusCounts.limpa} />
           <FilterButton status="pendente" label="Pendentes" count={statusCounts.pendente} />
         </View>
 
-        {/* Contador de resultados quando há pesquisa */}
         {searchQuery.trim() && (
           <View className="mt-3">
             <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -240,7 +289,6 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
         )}
       </View>
 
-      {/* Lista de salas */}
       <FlatList
         data={filteredSalas}
         renderItem={renderSala}
@@ -262,12 +310,58 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
         ListEmptyComponent={renderEmpty}
       />
 
-      {/* Modal do formulário */}
       <SalaForm
         visible={showForm}
         onClose={handleCloseForm}
         sala={editingSala}
       />
+
+      <Modal
+        visible={showSalaLimpaModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleFecharModalSalaLimpa}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className={`w-full max-w-md rounded-2xl p-6 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 rounded-full items-center justify-center mb-4"
+                style={{ backgroundColor: '#10B981' + '20' }}>
+                <Text className="text-3xl">✅</Text>
+              </View>
+              <Text className={`text-xl font-bold text-center ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                Sala Já Está Limpa
+              </Text>
+            </View>
+            
+            <Text className={`text-base text-center mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              A sala <Text className="font-semibold">{salaLimpaData?.nome}</Text> já está limpa.
+            </Text>
+            
+            <Text className={`text-sm text-center mb-6 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              Não é possível iniciar um processo de limpeza em uma sala que já está limpa.
+            </Text>
+            
+            <TouchableOpacity
+              onPress={handleFecharModalSalaLimpa}
+              className="w-full py-4 rounded-xl"
+              style={{ backgroundColor: SENAC_COLORS.primary }}
+            >
+              <Text className="text-white font-semibold text-center text-base">
+                Entendi
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

@@ -7,26 +7,177 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
+  Image,
+  FlatList,
 } from 'react-native';
-import { ChevronLeft, CheckCircle, Clock } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeft, CheckCircle, Clock, Camera, X, AlertTriangle } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
+import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
+import { useBottomTabs } from '../contexts/BottomTabsContext';
 import { SENAC_COLORS } from '../constants/colors';
 import { StackScreenProps } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { SalasStackParamList } from '../types/navigation';
+import { useCallback } from 'react';
 
 type LimpezaProcessoScreenProps = StackScreenProps<SalasStackParamList, 'LimpezaProcesso'>;
 
 const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigation, route }) => {
   const { isDarkMode, user } = useAuth();
-  const { marcarComoLimpa } = useSalas();
+  const { groups, getGroupName } = useGroups();
+  const { iniciarLimpeza, concluirLimpeza, uploadFotoLimpeza, getSala, marcarComoSuja } = useSalas();
+  const { setHideBottomTabs } = useBottomTabs();
   const [observacoes, setObservacoes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [limpezaIniciada, setLimpezaIniciada] = useState(false);
   const [inicioLimpeza, setInicioLimpeza] = useState<Date | null>(null);
   const [tempoDecorrido, setTempoDecorrido] = useState('0:00');
+  const [fotosLimpeza, setFotosLimpeza] = useState<string[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [registroLimpezaId, setRegistroLimpezaId] = useState<number | null>(null);
+  const [salaData, setSalaData] = useState<any>(null);
 
-  const { salaId, salaNome } = route.params;
+  const { salaId, salaNome, qrCodeScanned } = route.params;
+
+  const isAdmin = (user: any): boolean => {
+    return user?.is_superuser || false;
+  };
+
+  const isZelador = (user: any, groups: any[]): boolean => {
+    if (!user?.groups || !groups.length) return false;
+    return user.groups.some((groupId: number) => {
+      const groupName = getGroupName(groupId);
+      return groupName === 'Zeladoria';
+    });
+  };
+
+  const isSolicitanteServico = (user: any, groups: any[]): boolean => {
+    if (!user?.groups || !groups.length) return false;
+    return user.groups.some((groupId: number) => {
+      const groupName = getGroupName(groupId);
+      return groupName === 'Solicitante de Serviços';
+    });
+  };
+
+  useEffect(() => {
+    setHideBottomTabs(limpezaIniciada);
+    
+    return () => {
+      setHideBottomTabs(false);
+    };
+  }, [limpezaIniciada, setHideBottomTabs]);
+
+  useEffect(() => {
+    if (qrCodeScanned && salaId) {
+      carregarDadosSala();
+    }
+  }, [qrCodeScanned, salaId]);
+
+  const carregarDadosSala = async () => {
+    try {
+      setIsLoading(true);
+      
+      const result = await getSala(salaId);
+      if (!result.success || !result.sala) {
+        Alert.alert('Erro', 'Sala não encontrada.');
+        navigation.goBack();
+        return;
+      }
+      
+      setSalaData(result.sala);
+      
+    } catch (error) {
+      console.error('Erro ao carregar dados da sala:', error);
+      Alert.alert('Erro', 'Erro ao carregar dados da sala.');
+      navigation.goBack();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const marcarSalaComoSuja = async (qrCodeId: string) => {
+    try {
+      setIsLoading(true);
+      const result = await marcarComoSuja(qrCodeId, { observacoes: 'Marcada como suja via QR Code' });
+      
+      if (result.success) {
+        Alert.alert(
+          'Sucesso',
+          'Sala marcada como suja com sucesso.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      } else {
+        Alert.alert('Erro', result.error || 'Erro ao marcar sala como suja.');
+      }
+    } catch (error) {
+      console.error('Erro ao marcar sala como suja:', error);
+      Alert.alert('Erro', 'Erro ao marcar sala como suja.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const iniciarLimpezaAutomatica = async (qrCodeId: string) => {
+    try {
+      
+      setIsLoading(true);
+      const result = await iniciarLimpeza(qrCodeId);
+      
+      if (result.success && result.registro) {
+        setRegistroLimpezaId(result.registro.id);
+        setLimpezaIniciada(true);
+        setInicioLimpeza(new Date());
+        
+        Alert.alert(
+          'Limpeza Iniciada',
+          'Limpeza iniciada com sucesso! Você não pode sair desta tela até finalizar a limpeza.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Erro', result.error || 'Erro ao iniciar limpeza.');
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar limpeza:', error);
+      Alert.alert('Erro', 'Erro ao iniciar limpeza.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (limpezaIniciada) {
+          Alert.alert(
+            'Limpeza em Andamento',
+            'Você não pode sair da tela enquanto a limpeza estiver em andamento. Finalize a limpeza primeiro.',
+            [{ text: 'OK' }]
+          );
+          return true;
+        }
+        return false;
+      };
+
+      const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+        if (!limpezaIniciada) {
+          return;
+        }
+
+        e.preventDefault();
+
+        Alert.alert(
+          'Limpeza em Andamento',
+          'Você não pode sair da tela enquanto a limpeza estiver em andamento. Finalize a limpeza primeiro.',
+          [{ text: 'OK' }]
+        );
+      });
+
+      return unsubscribe;
+    }, [limpezaIniciada, navigation])
+  );
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -44,14 +195,33 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
     };
   }, [limpezaIniciada, inicioLimpeza]);
 
-  const handleIniciarLimpeza = () => {
+  const handleIniciarLimpeza = async () => {
+    if (!salaId) {
+      Alert.alert('Erro', 'ID da sala não encontrado');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await iniciarLimpeza(salaId);
+      
+      if (result.success && result.registro) {
     setLimpezaIniciada(true);
     setInicioLimpeza(new Date());
+        setRegistroLimpezaId(result.registro.id);
     Alert.alert(
       'Limpeza Iniciada',
       'A limpeza foi iniciada. Quando terminar, clique em "Finalizar Limpeza" para concluir o processo.',
       [{ text: 'OK' }]
     );
+      } else {
+        Alert.alert('Erro', result.error || 'Erro ao iniciar limpeza');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao iniciar limpeza');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFinalizarLimpeza = async () => {
@@ -63,9 +233,15 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
     setIsLoading(true);
     try {
       const data = observacoes.trim() ? { observacoes: observacoes.trim() } : {};
-      const result = await marcarComoLimpa(salaId, data);
+      const result = await concluirLimpeza(salaId, data);
       
       if (result.success) {
+        setLimpezaIniciada(false);
+        setInicioLimpeza(null);
+        setRegistroLimpezaId(null);
+        setFotosLimpeza([]);
+        setObservacoes('');
+        
         Alert.alert(
           'Sucesso',
           'Limpeza finalizada com sucesso!',
@@ -94,21 +270,141 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
     return `${diffMins}:${diffSecs.toString().padStart(2, '0')}`;
   };
 
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permissão Necessária',
+        'Precisamos de permissão para acessar sua galeria de fotos.',
+        [{ text: 'OK' }]
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const pickImage = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.3, // Reduzido para menor tamanho
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permissão Necessária',
+        'Precisamos de permissão para acessar sua câmera.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.3, // Reduzido para menor tamanho
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await uploadPhoto(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Erro ao tirar foto:', error);
+      Alert.alert('Erro', 'Não foi possível tirar a foto.');
+    }
+  };
+
+  const uploadPhoto = async (imageUri: string) => {
+    if (!registroLimpezaId) {
+      Alert.alert('Erro', 'Registro de limpeza não encontrado. Inicie a limpeza primeiro.');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const result = await uploadFotoLimpeza(registroLimpezaId, imageUri);
+      
+      if (result.success) {
+        setFotosLimpeza(prev => [...prev, imageUri]);
+        Alert.alert('Sucesso', 'Foto enviada com sucesso!');
+      } else {
+        Alert.alert('Erro', result.error || 'Erro ao enviar foto');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao enviar foto');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Adicionar Foto',
+      'Escolha uma opção:',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Galeria', onPress: pickImage },
+        { text: 'Câmera', onPress: takePhoto },
+      ]
+    );
+  };
+
+  const removePhoto = (index: number) => {
+    Alert.alert(
+      'Remover Foto',
+      'Tem certeza que deseja remover esta foto?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Remover', 
+          style: 'destructive', 
+          onPress: () => {
+            setFotosLimpeza(prev => prev.filter((_, i) => i !== index));
+          }
+        },
+      ]
+    );
+  };
+
   return (
-    <View className={`flex-1 ${
+    <SafeAreaView className={`flex-1 ${
       isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
-    }`}>
-      {/* Header */}
+    }`} edges={['top']}>
       <View className={`flex-row items-center justify-between p-4 border-b ${
         isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
       }`}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          className="p-2 rounded-full"
-          style={{ backgroundColor: SENAC_COLORS.primary + '20' }}
-        >
-          <ChevronLeft size={24} color={SENAC_COLORS.primary} />
-        </TouchableOpacity>
+        {!limpezaIniciada && (
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="p-2 rounded-full"
+            style={{ backgroundColor: SENAC_COLORS.primary + '20' }}
+          >
+            <ChevronLeft size={24} color={SENAC_COLORS.primary} />
+          </TouchableOpacity>
+        )}
+        
+        {limpezaIniciada && (
+          <View className="w-10 h-10" />
+        )}
         
         <Text className={`text-lg font-bold ${
           isDarkMode ? 'text-white' : 'text-gray-900'
@@ -120,7 +416,6 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
       </View>
 
              <ScrollView className="flex-1">
-         {/* Informações da Sala */}
          <View className={`mt-4 mx-4 mb-3 p-4 rounded-xl ${
            isDarkMode ? 'bg-gray-800' : 'bg-white'
          } shadow-sm border ${
@@ -140,7 +435,23 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
            </Text>
          </View>
 
-         {/* Status da Limpeza */}
+         {limpezaIniciada && (
+           <View className={`mx-4 mb-3 p-4 rounded-xl ${
+             isDarkMode ? 'bg-orange-900' : 'bg-orange-50'
+           } border ${
+             isDarkMode ? 'border-orange-700' : 'border-orange-200'
+           }`}>
+             <View className="flex-row items-center">
+               <AlertTriangle size={20} color="#F59E0B" />
+               <Text className={`ml-2 text-sm font-medium ${
+                 isDarkMode ? 'text-orange-200' : 'text-orange-800'
+               }`}>
+                 Limpeza em andamento - Não é possível sair da tela
+               </Text>
+             </View>
+           </View>
+         )}
+
          <View className={`mx-4 mb-3 p-4 rounded-xl ${
            isDarkMode ? 'bg-gray-800' : 'bg-white'
          } shadow-sm border ${
@@ -177,27 +488,32 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
            )}
          </View>
 
-         {/* Botão Iniciar Limpeza */}
          {!limpezaIniciada && (
            <View className="mx-4 mb-3">
              <TouchableOpacity
                onPress={handleIniciarLimpeza}
+               disabled={isLoading}
                className={`p-4 rounded-xl ${
-                 isDarkMode ? 'bg-blue-600' : 'bg-blue-500'
+                 isLoading 
+                   ? (isDarkMode ? 'bg-gray-600' : 'bg-gray-400')
+                   : (isDarkMode ? 'bg-blue-600' : 'bg-blue-500')
                }`}
                activeOpacity={0.8}
              >
                <View className="flex-row items-center justify-center">
+                 {isLoading ? (
+                   <ActivityIndicator size={20} color="white" />
+                 ) : (
                  <Clock size={20} color="white" />
+                 )}
                  <Text className="ml-2 text-white text-sm font-semibold">
-                   Iniciar Limpeza
+                   {isLoading ? 'Iniciando...' : 'Iniciar Limpeza'}
                  </Text>
                </View>
              </TouchableOpacity>
            </View>
          )}
 
-         {/* Área de Observações */}
          {limpezaIniciada && (
            <View className={`mx-4 mb-3 p-4 rounded-xl ${
              isDarkMode ? 'bg-gray-800' : 'bg-white'
@@ -232,7 +548,70 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
            </View>
          )}
 
-         {/* Botão Finalizar Limpeza */}
+         {limpezaIniciada && (
+           <View className={`mx-4 mb-3 p-4 rounded-xl ${
+             isDarkMode ? 'bg-gray-800' : 'bg-white'
+           } shadow-sm border ${
+             isDarkMode ? 'border-gray-700' : 'border-gray-200'
+           }`}>
+             <View className="flex-row items-center justify-between mb-3">
+               <Text className={`text-sm font-medium ${
+                 isDarkMode ? 'text-gray-300' : 'text-gray-600'
+               }`}>
+                 Fotos da Limpeza
+               </Text>
+               <TouchableOpacity
+                 onPress={showImageOptions}
+                 disabled={isUploadingPhoto}
+                 className={`p-2 rounded-lg flex-row items-center ${
+                   isDarkMode ? 'bg-blue-600' : 'bg-blue-500'
+                 }`}
+                 style={{ opacity: isUploadingPhoto ? 0.6 : 1 }}
+               >
+                 {isUploadingPhoto ? (
+                   <ActivityIndicator size={16} color="white" />
+                 ) : (
+                   <Camera size={16} color="white" />
+                 )}
+                 <Text className="ml-1 text-white text-xs font-medium">
+                   {isUploadingPhoto ? 'Enviando...' : 'Adicionar'}
+                 </Text>
+               </TouchableOpacity>
+             </View>
+             
+             {fotosLimpeza.length > 0 ? (
+               <FlatList
+                 data={fotosLimpeza}
+                 horizontal
+                 showsHorizontalScrollIndicator={false}
+                 keyExtractor={(item, index) => index.toString()}
+                 renderItem={({ item, index }) => (
+                   <View className="relative mr-3">
+                     <Image
+                       source={{ uri: item }}
+                       className="w-20 h-20 rounded-lg"
+                       resizeMode="cover"
+                     />
+                     <TouchableOpacity
+                       onPress={() => removePhoto(index)}
+                       className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                       style={{ width: 24, height: 24 }}
+                     >
+                       <X size={12} color="white" />
+                     </TouchableOpacity>
+                   </View>
+                 )}
+               />
+             ) : (
+               <Text className={`text-xs text-center py-4 ${
+                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
+               }`}>
+                 Nenhuma foto adicionada ainda
+               </Text>
+             )}
+           </View>
+         )}
+
          {limpezaIniciada && (
            <View className="mx-4 mb-3">
              <TouchableOpacity
@@ -259,7 +638,6 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
            </View>
          )}
 
-         {/* Instruções */}
          <View className={`mx-4 mb-4 p-4 rounded-xl ${
            isDarkMode ? 'bg-gray-800' : 'bg-white'
          } shadow-sm border ${
@@ -284,6 +662,11 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
              <Text className={`text-xs ${
                isDarkMode ? 'text-gray-400' : 'text-gray-500'
              }`}>
+               • Adicione fotos da limpeza realizada (recomendado)
+             </Text>
+             <Text className={`text-xs ${
+               isDarkMode ? 'text-gray-400' : 'text-gray-500'
+             }`}>
                • Adicione observações se necessário (opcional)
              </Text>
              <Text className={`text-xs ${
@@ -294,7 +677,7 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
            </View>
          </View>
        </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

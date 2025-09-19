@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,10 +22,30 @@ const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const { login, isDarkMode } = useAuth();
   
   const usernameRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setIsKeyboardVisible(true);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -47,26 +67,41 @@ const LoginScreen: React.FC = () => {
       <KeyboardAvoidingView 
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
         <ScrollView 
+          ref={scrollViewRef}
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ 
+            flexGrow: 1,
+            paddingBottom: isKeyboardVisible ? 100 : 50
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          <View className="flex-1 justify-center px-6 py-8">
+          <View className={`flex-1 justify-center px-6 py-8 ${isKeyboardVisible ? 'pt-4' : 'pt-8'}`}>
             <View className="items-center mb-4">
-              <Image source={require('../../assets/images/logo_name.png')} className="w-64 h-40 mb-8" />
-              <Text className={`text-3xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <Image 
+                source={require('../../assets/images/logo_name.png')} 
+                style={{
+                  width: isKeyboardVisible ? 192 : 256, // w-48 = 192px, w-64 = 256px
+                  height: isKeyboardVisible ? 120 : 160, // h-30 = 120px, h-40 = 160px
+                  marginBottom: isKeyboardVisible ? 16 : 32, // mb-4 = 16px, mb-8 = 32px
+                  resizeMode: 'contain'
+                }}
+              />
+              <Text className={`${isKeyboardVisible ? 'text-2xl' : 'text-3xl'} font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Bem-vindo
               </Text>
-              <Text className={`text-center text-base leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Entre com suas credenciais para acessar o sistema
-              </Text>
+              {!isKeyboardVisible && (
+                <Text className={`text-center text-base leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Entre com suas credenciais para acessar o sistema
+                </Text>
+              )}
             </View>
 
-            <View className="mb-12 space-y-6">
+            <View className={`${isKeyboardVisible ? 'mb-6' : 'mb-12'} space-y-6`}>
               <View>
                 <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   Usuário

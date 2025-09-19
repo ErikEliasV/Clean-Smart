@@ -6,6 +6,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useAuth } from '../contexts/AuthContext';
+import { useQRCode } from '../contexts/QRCodeContext';
+import { useBottomTabs } from '../contexts/BottomTabsContext';
+import { useNotifications } from '../contexts/NotificationsContext';
+import { useGroups } from '../contexts/GroupsContext';
 import { useResponsive } from '../hooks/useResponsive';
 import Sidebar from '../components/Sidebar';
 
@@ -16,6 +20,7 @@ import SalasScreen from '../screens/SalasScreen';
 import RegistrosLimpezaScreen from '../screens/RegistrosLimpezaScreen';
 import LimpezaProcessoScreen from '../screens/LimpezaProcessoScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import UserManagementScreen from '../screens/UserManagementScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -37,6 +42,7 @@ const ProfileStack = () => {
       }}
     >
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 };
@@ -72,14 +78,26 @@ const SalasStack = () => {
 };
 
 
-const TabNavigator = () => {
+interface TabNavigatorProps {
+}
+
+const TabNavigator: React.FC<TabNavigatorProps> = () => {
   const { isDarkMode } = useAuth();
+  const { setQRCodeData } = useQRCode();
+  const { hideBottomTabs } = useBottomTabs();
+  const { notificacoesNaoLidas, carregarNotificacoes } = useNotifications();
+  const { carregarGrupos } = useGroups();
   const insets = useSafeAreaInsets();
   const { shouldUseSidebar } = useResponsive();
   const [activeTab, setActiveTab] = useState('Home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+
+  React.useEffect(() => {
+    carregarNotificacoes();
+    carregarGrupos();
+  }, [carregarNotificacoes, carregarGrupos]);
 
   const handleTabPress = (tabName: string) => {
     if (tabName === 'QRScanner') {
@@ -112,11 +130,20 @@ const TabNavigator = () => {
 
   const handleQRCodeScanned = ({ data }: { data: string }) => {
     setShowScanner(false);
-    Alert.alert(
-      'QR Code Escaneado',
-      `Código encontrado: ${data}`,
-      [{ text: 'OK' }]
-    );
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (!uuidRegex.test(data)) {
+      Alert.alert(
+        'QR Code Inválido',
+        'Este QR Code não é válido para o sistema de limpeza.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    setQRCodeData(data);
+    setActiveTab('Salas');
   };
 
   const renderContent = () => {
@@ -151,7 +178,6 @@ const TabNavigator = () => {
           </View>
         </View>
 
-        {/* Modal do Scanner QR Code para modo sidebar */}
         <Modal
           visible={showScanner}
           animationType="slide"
@@ -215,6 +241,7 @@ const TabNavigator = () => {
   return (
     <>
       <Tab.Navigator
+        initialRouteName="Salas"
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarIcon: ({ focused, color, size }) => {
@@ -250,6 +277,19 @@ const TabNavigator = () => {
               );
             }
 
+            if (route.name === 'Profile' && notificacoesNaoLidas > 0) {
+              return (
+                <View className="relative">
+                  <IconComponent size={size} color={color} />
+                  <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[16px] h-4 items-center justify-center">
+                    <Text className="text-white text-xs font-bold">
+                      {notificacoesNaoLidas > 9 ? '9+' : notificacoesNaoLidas}
+                    </Text>
+                  </View>
+                </View>
+              );
+            }
+
             return <IconComponent size={size} color={color} />;
           },
           tabBarActiveTintColor: SENAC_COLORS.primary,
@@ -270,6 +310,7 @@ const TabNavigator = () => {
             },
             shadowOpacity: 0.1,
             shadowRadius: 4,
+            display: (shouldUseSidebar || hideBottomTabs) ? 'none' : 'flex',
           },
           tabBarLabelStyle: {
             fontSize: 12,
@@ -322,7 +363,6 @@ const TabNavigator = () => {
         />
       </Tab.Navigator>
 
-      {/* Modal do Scanner QR Code */}
       <Modal
         visible={showScanner}
         animationType="slide"
@@ -379,6 +419,7 @@ const TabNavigator = () => {
           </View>
         </View>
       </Modal>
+
     </>
   );
 };
@@ -392,9 +433,16 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      {user ? <TabNavigator /> : <LoginScreen />}
-    </NavigationContainer>
+    <>
+      <NavigationContainer>
+        {user ? (
+          <TabNavigator />
+        ) : (
+          <LoginScreen />
+        )}
+      </NavigationContainer>
+      
+    </>
   );
 };
 

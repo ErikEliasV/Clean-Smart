@@ -26,7 +26,6 @@ export const useResponsive = (): ResponsiveState => {
   const { width, height } = dimensions;
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 768;
-  // Usar sidebar em tablets em landscape ou em tablets grandes em portrait
   const shouldUseSidebar = isTablet && (isLandscape || Math.min(width, height) >= 1024);
 
   return {
