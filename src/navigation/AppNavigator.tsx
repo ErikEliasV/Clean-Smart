@@ -13,7 +13,6 @@ import { useGroups } from '../contexts/GroupsContext';
 import { useResponsive } from '../hooks/useResponsive';
 import Sidebar from '../components/Sidebar';
 
-
 import LoginScreen from '../screens/LoginScreen';
 import InformationScreen from '../screens/InformationScreen';
 import SalasScreen from '../screens/SalasScreen';
@@ -25,14 +24,12 @@ import UserManagementScreen from '../screens/UserManagementScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-
 import { Home, User, Users, Settings, Building, QrCode, X } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
 import { SalasStackParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-
 
 const ProfileStack = () => {
   return (
@@ -76,7 +73,6 @@ const SalasStack = () => {
     </SalasStackNavigator.Navigator>
   );
 };
-
 
 interface TabNavigatorProps {
 }
@@ -423,7 +419,6 @@ const TabNavigator: React.FC<TabNavigatorProps> = () => {
     </>
   );
 };
-
 
 const AppNavigator = () => {
   const { user, isLoading } = useAuth();
