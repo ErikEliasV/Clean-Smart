@@ -125,7 +125,7 @@ const LoginScreen: React.FC = () => {
                       isDarkMode 
                         ? 'bg-gray-800/50 border-gray-600/30 text-white' 
                         : 'bg-white/80 border-gray-200/30 text-gray-900'
-                    } backdrop-blur-sm pl-12`}
+                    }  pl-12`}
                     placeholder="Digite seu usuário"
                     placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                     value={username}
@@ -158,7 +158,7 @@ const LoginScreen: React.FC = () => {
                       isDarkMode 
                         ? 'bg-gray-800/50 border-gray-600/30 text-white' 
                         : 'bg-white/80 border-gray-200/30 text-gray-900'
-                    } backdrop-blur-sm pl-12 pr-12`}
+                    }  pl-12 pr-12`}
                     placeholder="Digite sua senha"
                     placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                     value={password}

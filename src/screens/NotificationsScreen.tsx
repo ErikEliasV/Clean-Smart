@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
   RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +15,8 @@ import { useNotifications } from '../contexts/NotificationsContext';
 import { SENAC_COLORS } from '../constants/colors';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -28,6 +29,7 @@ const NotificationsScreen: React.FC = () => {
     marcarComoLida,
     marcarTodasComoLidas
   } = useNotifications();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMarkingAsRead, setIsMarkingAsRead] = useState<number | null>(null);
@@ -48,32 +50,45 @@ const NotificationsScreen: React.FC = () => {
     setIsMarkingAsRead(null);
     
     if (!success) {
-      Alert.alert('Erro', 'Não foi possível marcar a notificação como lida');
+      showAlert({
+        title: 'Erro',
+        message: 'Não foi possível marcar a notificação como lida',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
   const handleMarkAllAsRead = async () => {
     if (notificacoesNaoLidas === 0) {
-      Alert.alert('Informação', 'Todas as notificações já estão marcadas como lidas');
+      showAlert({
+        title: 'Informação',
+        message: 'Todas as notificações já estão marcadas como lidas',
+        type: 'info',
+        confirmText: 'OK'
+      });
       return;
     }
 
-    Alert.alert(
-      'Marcar todas como lidas',
-      `Deseja marcar todas as ${notificacoesNaoLidas} notificação(ões) não lida(s) como lidas?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            const success = await marcarTodasComoLidas();
-            if (!success) {
-              Alert.alert('Erro', 'Não foi possível marcar todas as notificações como lidas');
-            }
-          }
+    showAlert({
+      title: 'Marcar todas como lidas',
+      message: `Deseja marcar todas as ${notificacoesNaoLidas} notificação(ões) não lida(s) como lidas?`,
+      type: 'warning',
+      confirmText: 'Confirmar',
+      cancelText: 'Cancelar',
+      showCancel: true,
+      onConfirm: async () => {
+        const success = await marcarTodasComoLidas();
+        if (!success) {
+          showAlert({
+            title: 'Erro',
+            message: 'Não foi possível marcar todas as notificações como lidas',
+            type: 'error',
+            confirmText: 'OK'
+          });
         }
-      ]
-    );
+      }
+    });
   };
 
   const handleNotificationPress = async (notificacao: any) => {
@@ -99,7 +114,7 @@ const NotificationsScreen: React.FC = () => {
       key={notificacao.id}
       onPress={() => handleNotificationPress(notificacao)}
       activeOpacity={0.7}
-      className={`mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm border ${
+      className={`mx-4 mb-4 rounded-2xl overflow-hidden border ${
         isDarkMode ? 'border-gray-700' : 'border-gray-200'
       }`}
       style={{
@@ -258,7 +273,7 @@ const NotificationsScreen: React.FC = () => {
           </View>
         ) : (
           <>
-            <View className={`mx-4 mb-6 rounded-2xl overflow-hidden shadow-sm border ${
+            <View className={`mx-4 mb-6 rounded-2xl overflow-hidden border ${
               isDarkMode ? 'border-gray-700' : 'border-gray-200'
             }`}
             style={{
@@ -296,6 +311,18 @@ const NotificationsScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </SafeAreaView>
   );
 };

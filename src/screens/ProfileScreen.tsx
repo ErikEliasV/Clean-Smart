@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Alert,
   ScrollView,
   ActivityIndicator,
   Image,
@@ -29,6 +28,8 @@ import {
   Moon
 } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
@@ -36,6 +37,7 @@ const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, getCurrentUser, logout, isDarkMode, updateProfile, getProfile } = useAuth();
   const { notificacoesNaoLidas, refreshNotificacoes } = useNotifications();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
@@ -46,7 +48,12 @@ const ProfileScreen: React.FC = () => {
     setIsRefreshing(false);
 
     if (!result.success) {
-      Alert.alert('Erro', result.error || 'Erro ao atualizar dados do usuário');
+      showAlert({
+        title: 'Erro',
+        message: result.error || 'Erro ao atualizar dados do usuário',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
@@ -55,21 +62,15 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair do aplicativo?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: logout,
-        },
-      ]
-    );
+    showAlert({
+      title: 'Sair da Conta',
+      message: 'Tem certeza que deseja sair da sua conta?',
+      type: 'warning',
+      confirmText: 'Sair',
+      cancelText: 'Cancelar',
+      showCancel: true,
+      onConfirm: logout
+    });
   };
 
   const navigateToChangePassword = () => {
@@ -85,12 +86,27 @@ const ProfileScreen: React.FC = () => {
     try {
       const result = await updateProfile(imageUri);
       if (result.success) {
-        Alert.alert('Sucesso', 'Foto de perfil atualizada com sucesso!');
+        showAlert({
+          title: 'Sucesso',
+          message: 'Foto de perfil atualizada com sucesso!',
+          type: 'success',
+          confirmText: 'OK'
+        });
       } else {
-        Alert.alert('Erro', result.error || 'Erro ao atualizar foto de perfil');
+        showAlert({
+          title: 'Erro',
+          message: result.error || 'Erro ao atualizar foto de perfil',
+          type: 'error',
+          confirmText: 'OK'
+        });
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao atualizar foto de perfil');
+      showAlert({
+        title: 'Erro',
+        message: 'Erro ao atualizar foto de perfil',
+        type: 'error',
+        confirmText: 'OK'
+      });
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -101,12 +117,27 @@ const ProfileScreen: React.FC = () => {
     try {
       const result = await updateProfile(null);
       if (result.success) {
-        Alert.alert('Sucesso', 'Foto de perfil removida com sucesso!');
+        showAlert({
+          title: 'Sucesso',
+          message: 'Foto de perfil removida com sucesso!',
+          type: 'success',
+          confirmText: 'OK'
+        });
       } else {
-        Alert.alert('Erro', result.error || 'Erro ao remover foto de perfil');
+        showAlert({
+          title: 'Erro',
+          message: result.error || 'Erro ao remover foto de perfil',
+          type: 'error',
+          confirmText: 'OK'
+        });
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao remover foto de perfil');
+      showAlert({
+        title: 'Erro',
+        message: 'Erro ao remover foto de perfil',
+        type: 'error',
+        confirmText: 'OK'
+      });
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -170,7 +201,7 @@ const ProfileScreen: React.FC = () => {
 
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          } ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'}`}>
             <View className="items-center mb-6">
               <ProfileImagePicker
                 currentImageUri={user.profile?.profile_picture}
@@ -222,16 +253,28 @@ const ProfileScreen: React.FC = () => {
 
           <TouchableOpacity
             onPress={handleLogout}
-            className="flex-row items-center justify-center p-4 rounded-2xl backdrop-blur-sm mt-8"
+            className="flex-row items-center justify-center p-4 rounded-2xl mt-8"
             style={{ backgroundColor: `${SENAC_COLORS.error}E6` }}
           >
             <LogOut size={20} color="white" />
             <Text className="ml-3 text-base font-medium text-white">
-              Sair do Aplicativo
+              Sair da Conta
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </SafeAreaView>
   );
 };

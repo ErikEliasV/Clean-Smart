@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Image, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -79,7 +79,7 @@ const SettingsScreen: React.FC = () => {
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          }  ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'}`}>
             <View className="flex-row items-center mb-4">
               <SettingsIcon size={24} color={SENAC_COLORS.primary} />
               <Text className={`text-lg font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -119,17 +119,16 @@ const SettingsScreen: React.FC = () => {
 
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          }  ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'}`}>
             <Text className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Aparência
             </Text>
             
-            <TouchableOpacity
-              onPress={toggleTheme}
+            <View
               className="flex-row items-center justify-between p-4 rounded-xl"
               style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
             >
-              <View className="flex-row items-center">
+              <View className="flex-row items-center flex-1">
                 {isDarkMode ? (
                   <Moon size={24} color={SENAC_COLORS.secondary} />
                 ) : (
@@ -139,13 +138,22 @@ const SettingsScreen: React.FC = () => {
                   {isDarkMode ? 'Modo Escuro' : 'Modo Claro'}
                 </Text>
               </View>
-              <ChevronRight size={20} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-            </TouchableOpacity>
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleTheme}
+                trackColor={{ 
+                  false: '#D1D5DB', 
+                  true: SENAC_COLORS.primary 
+                }}
+                thumbColor={isDarkMode ? '#FFFFFF' : '#F3F4F6'}
+                ios_backgroundColor="#D1D5DB"
+              />
+            </View>
           </View>
 
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          }  ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'}`}>
             <Text className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Conta e Segurança
             </Text>
