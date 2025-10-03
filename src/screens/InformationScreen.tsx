@@ -1,8 +1,12 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, RefreshControl, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import Svg, { Circle, Path, G } from 'react-native-svg';
 import { useAuth, isAdmin, isZelador, isCorpoDocente } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 import { 
   User, 
   Lock, 
@@ -15,13 +19,25 @@ import {
   Bell,
   CheckCircle,
   Clock,
-  BarChart3
+  BarChart3,
+  AlertTriangle,
+  XCircle,
+  TrendingUp,
+  Activity,
+  PieChart as PieChartIcon,
+  BarChart,
+  Target,
+  Lightbulb,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
 
 const InformationScreen: React.FC = () => {
+  const navigation = useNavigation();
   const { user, logout, isDarkMode, toggleTheme } = useAuth();
   const { salas, listSalas, isLoading } = useSalas();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     loadSalasData();
@@ -31,22 +47,183 @@ const InformationScreen: React.FC = () => {
     await listSalas();
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair do aplicativo?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: logout,
-        },
-      ]
+  const navigateToProfile = () => {
+    // @ts-ignore - Profile é uma tela válida no tab navigator
+    navigation.navigate('Profile');
+  };
+
+  const getUserRoles = () => {
+    const roles = [];
+    
+    if (isAdmin(user)) {
+      roles.push('Administrador');
+    }
+    if (isZelador(user)) {
+      roles.push('Zelador');
+    }
+    if (isCorpoDocente(user)) {
+      roles.push('Corpo Docente');
+    }
+    
+    if (roles.length === 0) {
+      roles.push('Usuário');
+    }
+    
+  return roles;
+};
+
+const BarChart = ({ data, isDarkMode }: { data: { label: string; value: number; color: string; max: number }[], isDarkMode: boolean }) => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <View className="p-4 items-center">
+        <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Nenhum dado disponível
+        </Text>
+      </View>
     );
+  }
+  
+  return (
+    <View className="space-y-3">
+      {data.map((item, index) => (
+      <View key={index} className="space-y-1">
+        <View className="flex-row justify-between items-center">
+          <Text className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            {item.label}
+          </Text>
+          <Text className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            {item.value}
+          </Text>
+        </View>
+        <View className={`h-2 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+          <View 
+            className="h-2 rounded-full"
+            style={{ 
+              width: `${(item.value / item.max) * 100}%`,
+              backgroundColor: item.color
+            }}
+          />
+        </View>
+      </View>
+    ))}
+    </View>
+  );
+};
+
+const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value: number; color: string }[], isDarkMode: boolean }) => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <View className="p-6 items-center justify-center min-h-[200px]">
+        <View className="items-center">
+          <PieChartIcon size={32} color={isDarkMode ? '#6B7280' : '#9CA3AF'} />
+          <Text className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Nenhum dado disponível
+          </Text>
+        </View>
+      </View>
+    );
+  }
+  
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  
+  const createPieChart = () => {
+    const size = 180; // Aumentado de 160 para 180
+    const radius = 75; // Aumentado de 65 para 75
+    const centerX = size / 2;
+    const centerY = size / 2;
+    
+    let currentAngle = 0;
+    const paths: React.ReactElement[] = [];
+    
+    data.forEach((item, index) => {
+      const percentage = (item.value / total) * 100;
+      const angle = (percentage / 100) * 360;
+      
+      if (angle > 0) {
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + angle;
+        
+        const x1 = centerX + radius * Math.cos((startAngle * Math.PI) / 180);
+        const y1 = centerY + radius * Math.sin((startAngle * Math.PI) / 180);
+        const x2 = centerX + radius * Math.cos((endAngle * Math.PI) / 180);
+        const y2 = centerY + radius * Math.sin((endAngle * Math.PI) / 180);
+        
+        const largeArcFlag = angle > 180 ? 1 : 0;
+        
+        const pathData = [
+          `M ${centerX} ${centerY}`,
+          `L ${x1} ${y1}`,
+          `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+          'Z'
+        ].join(' ');
+        
+        paths.push(
+          <Path
+            key={index}
+            d={pathData}
+            fill={item.color}
+            stroke={isDarkMode ? '#374151' : '#FFFFFF'}
+            strokeWidth={2}
+          />
+        );
+        
+        currentAngle += angle;
+      }
+    });
+    
+    return paths;
+  };
+  
+  return (
+    <View className="p-4">
+      {/* Gráfico de Pizza - Em Cima */}
+      <View className="items-center mb-4">
+        <Svg width={180} height={180}>
+          {createPieChart()}
+        </Svg>
+      </View>
+      
+      {/* Legenda - Em Baixo */}
+      <View className="space-y-3">
+        {data.map((item, index) => {
+          const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+          return (
+            <View key={index} className="flex-row items-center justify-between py-2">
+              <View className="flex-row items-center flex-1">
+                <View 
+                  className="w-4 h-4 rounded-full mr-3"
+                  style={{ backgroundColor: item.color }}
+                />
+                <Text className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {item.label}
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <Text className={`text-sm font-bold mr-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {item.value}
+                </Text>
+                <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  ({percentage}%)
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+  const handleLogout = () => {
+    showAlert({
+      title: 'Sair',
+      message: 'Tem certeza que deseja sair do aplicativo?',
+      type: 'warning',
+      confirmText: 'Sair',
+      cancelText: 'Cancelar',
+      showCancel: true,
+      onConfirm: logout
+    });
   };
 
 
@@ -54,7 +231,11 @@ const InformationScreen: React.FC = () => {
     total: salas.length,
     limpas: salas.filter(s => s.status_limpeza === 'Limpa').length,
     pendentes: salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length,
-    percentualLimpas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpa').length / salas.length) * 100) : 0
+    sujas: salas.filter(s => s.status_limpeza === 'Suja').length,
+    inativas: salas.filter(s => !s.ativa).length,
+    percentualLimpas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpa').length / salas.length) * 100) : 0,
+    percentualSujas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Suja').length / salas.length) * 100) : 0,
+    percentualPendentes: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length / salas.length) * 100) : 0
   };
 
   return (
@@ -97,9 +278,13 @@ const InformationScreen: React.FC = () => {
           </View>
 
 
-          <View className={`p-6 rounded-3xl mb-8 ${
-            isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          <TouchableOpacity 
+            onPress={navigateToProfile}
+            className={`p-6 rounded-3xl mb-8 ${
+              isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+            } backdrop-blur-sm border border-gray-200/20`}
+            activeOpacity={0.7}
+          >
             <View className="flex-row items-center">
               <View className="mr-4">
                 {user?.profile?.profile_picture ? (
@@ -112,10 +297,10 @@ const InformationScreen: React.FC = () => {
                   <View className={`w-16 h-16 rounded-full items-center justify-center ${
                     isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100/50'
                   }`}>
-                    {user?.is_superuser ? (
-                      <Crown size={32} color={SENAC_COLORS.secondary} />
-                    ) : isZelador(user) ? (
+                    {isZelador(user) ? (
                       <Shield size={32} color={SENAC_COLORS.primary} />
+                    ) : isAdmin(user) ? (
+                      <Crown size={32} color={SENAC_COLORS.secondary} />
                     ) : (
                       <User size={32} color={SENAC_COLORS.primary} />
                     )}
@@ -129,148 +314,374 @@ const InformationScreen: React.FC = () => {
                 <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   {user?.email || 'Sem email'}
                 </Text>
-                <View className="flex-row mt-2">
-                  {user?.is_superuser && (
-                    <View className="px-2 py-1 rounded-full mr-2" style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                      <Text style={{ color: SENAC_COLORS.secondary }} className="text-xs font-medium">Super Admin</Text>
+                <View className="flex-row mt-2 flex-wrap">
+                  {getUserRoles().map((role, index) => (
+                    <View 
+                      key={index}
+                      className="px-2 py-1 rounded-full mr-2 mb-1" 
+                      style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}
+                    >
+                      <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">
+                        {role}
+                      </Text>
                     </View>
-                  )}
-                  {(isZelador(user) || isAdmin(user)) && (
-                    <View className="px-2 py-1 rounded-full" style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                      <Text style={{ color: SENAC_COLORS.primary }} className="text-xs font-medium">Admin</Text>
-                    </View>
-                  )}
+                  ))}
                 </View>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
 
+          {/* Estatísticas Principais */}
           <View className="mb-8">
-            <Text className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              Estatísticas das Salas
-            </Text>
+            <View className="flex-row items-center justify-between mb-6">
+               <View className="flex-row items-center">
+                 <BarChart3 size={24} color={SENAC_COLORS.primary} />
+                 <Text className={`text-xl font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   Dashboard de Salas
+                 </Text>
+               </View>
+            </View>
             
-            <View className="grid grid-cols-2 gap-4 mb-4">
-              <View className={`p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}>
-                <View className="flex-row items-center">
-                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                       style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
-                    <Building size={20} color={SENAC_COLORS.primary} />
-                  </View>
-                  <View>
-                    <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {salasStats.total}
-                    </Text>
-                    <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Total de Salas
-                    </Text>
-                  </View>
-                </View>
-              </View>
+             {/* Cards de Estatísticas Principais */}
+             <View className="grid grid-cols-2 gap-3 mb-3">
+               <View className={`p-4 rounded-2xl ${
+                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+               } backdrop-blur-sm border border-gray-200/20`}>
+                 <View className="flex-row items-center justify-between mb-2">
+                   <View className={`w-10 h-10 rounded-full items-center justify-center`} 
+                        style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
+                     <Building size={20} color={SENAC_COLORS.primary} />
+                   </View>
+                   <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                     TOTAL
+                   </Text>
+                 </View>
+                 <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   {salasStats.total}
+                 </Text>
+                 <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                   Salas Cadastradas
+                 </Text>
+                 <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                   100%
+                 </Text>
+               </View>
 
-              <View className={`p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}>
-                <View className="flex-row items-center">
-                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                       style={{ backgroundColor: '#10B98120' }}>
-                    <CheckCircle size={20} color="#10B981" />
-                  </View>
-                  <View>
-                    <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {salasStats.limpas}
-                    </Text>
-                    <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Salas Limpas
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
+               <View className={`p-4 rounded-2xl ${
+                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+               } backdrop-blur-sm border border-gray-200/20`}>
+                 <View className="flex-row items-center justify-between mb-2">
+                   <View className={`w-10 h-10 rounded-full items-center justify-center`} 
+                        style={{ backgroundColor: '#10B98120' }}>
+                     <CheckCircle size={20} color="#10B981" />
+                   </View>
+                   <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                     LIMPAS
+                   </Text>
+                 </View>
+                 <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   {salasStats.limpas}
+                 </Text>
+                 <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                   Salas Limpas
+                 </Text>
+                 <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                   {salasStats.percentualLimpas}%
+                 </Text>
+               </View>
+             </View>
 
-            <View className="grid grid-cols-2 gap-4">
-              <View className={`p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}>
-                <View className="flex-row items-center">
-                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                       style={{ backgroundColor: '#F59E0B20' }}>
-                    <Clock size={20} color="#F59E0B" />
-                  </View>
-                  <View>
-                    <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {salasStats.pendentes}
-                    </Text>
-                    <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Pendentes
-                    </Text>
-                  </View>
-                </View>
-              </View>
+             {/* Cards de Status Detalhados */}
+             <View className="grid grid-cols-2 gap-3 mb-3">
+               <View className={`p-4 rounded-2xl ${
+                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+               } backdrop-blur-sm border border-gray-200/20`}>
+                 <View className="flex-row items-center justify-between mb-2">
+                   <View className={`w-10 h-10 rounded-full items-center justify-center`} 
+                        style={{ backgroundColor: '#F59E0B20' }}>
+                     <Clock size={20} color="#F59E0B" />
+                   </View>
+                   <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                     PENDENTES
+                   </Text>
+                 </View>
+                 <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   {salasStats.pendentes}
+                 </Text>
+                 <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                   Salas Pendentes
+                 </Text>
+                 <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                   {salasStats.percentualPendentes}%
+                 </Text>
+               </View>
 
-              <View className={`p-4 rounded-2xl ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm border border-gray-200/20`}>
-                <View className="flex-row items-center">
-                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3`} 
-                       style={{ backgroundColor: `${SENAC_COLORS.secondary}20` }}>
-                    <BarChart3 size={20} color={SENAC_COLORS.secondary} />
-                  </View>
-                  <View>
-                    <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {salasStats.percentualLimpas}%
-                    </Text>
-                    <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Limpeza
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
+               <View className={`p-4 rounded-2xl ${
+                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+               } backdrop-blur-sm border border-gray-200/20`}>
+                 <View className="flex-row items-center justify-between mb-2">
+                   <View className={`w-10 h-10 rounded-full items-center justify-center`} 
+                        style={{ backgroundColor: '#EF444420' }}>
+                     <AlertTriangle size={20} color="#EF4444" />
+                   </View>
+                   <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                     SUJAS
+                   </Text>
+                 </View>
+                 <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   {salasStats.sujas}
+                 </Text>
+                 <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                   Salas Sujas
+                 </Text>
+                 <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                   {salasStats.percentualSujas}%
+                 </Text>
+               </View>
+
+               <View className={`p-4 rounded-2xl ${
+                 isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+               } backdrop-blur-sm border border-gray-200/20`}>
+                 <View className="flex-row items-center justify-between mb-2">
+                   <View className={`w-10 h-10 rounded-full items-center justify-center`} 
+                        style={{ backgroundColor: '#6B728020' }}>
+                     <XCircle size={20} color="#6B7280" />
+                   </View>
+                   <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                     INATIVAS
+                   </Text>
+                 </View>
+                 <Text className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                   {salasStats.inativas}
+                 </Text>
+                 <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                   Salas Inativas
+                 </Text>
+                 <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                   {salasStats.total > 0 ? Math.round((salasStats.inativas / salasStats.total) * 100) : 0}%
+                 </Text>
+               </View>
+             </View>
           </View>
 
-          {salasStats.total > 0 && (
-            <View className={`p-4 rounded-2xl mb-8 ${
-              isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            } backdrop-blur-sm border border-gray-200/20`}>
-              <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Progresso de Limpeza
+          {/* Gráficos Visuais */}
+          <View className="mb-8">
+            <View className="flex-row items-center mb-4">
+              <BarChart3 size={20} color={SENAC_COLORS.primary} />
+              <Text className={`text-lg font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Análise Visual
               </Text>
-              <View className={`h-3 rounded-full mb-2 ${
-                isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
-              }`}>
-                <View 
-                  className="h-3 rounded-full bg-green-500"
-                  style={{ width: `${salasStats.percentualLimpas}%` }}
+            </View>
+            
+            <View className="grid grid-cols-1 gap-3">
+              {/* Gráfico de Barras - Status das Salas */}
+              <View className={`p-4 rounded-2xl ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } backdrop-blur-sm border border-gray-200/20`}>
+                <View className="flex-row items-center mb-4">
+                  <BarChart3 size={20} color={SENAC_COLORS.primary} />
+                  <Text className={`text-base font-semibold ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Distribuição por Status
+                  </Text>
+                </View>
+                <BarChart 
+                  data={salasStats.total > 0 ? [
+                    { label: 'Limpas', value: salasStats.limpas, color: '#10B981', max: salasStats.total },
+                    { label: 'Pendentes', value: salasStats.pendentes, color: '#F59E0B', max: salasStats.total },
+                    { label: 'Sujas', value: salasStats.sujas, color: '#EF4444', max: salasStats.total }
+                  ] : []}
+                  isDarkMode={isDarkMode}
                 />
               </View>
-              <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {salasStats.limpas} de {salasStats.total} salas limpas
+
+              {/* Gráfico de Pizza - Percentuais */}
+              <View className={`p-4 rounded-2xl ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } backdrop-blur-sm border border-gray-200/20`}>
+                <View className="flex-row items-center mb-4">
+                  <PieChartIcon size={20} color={SENAC_COLORS.secondary} />
+                  <Text className={`text-base font-semibold ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Percentual de Status
+                  </Text>
+                </View>
+                <PieChartComponent 
+                  data={salasStats.total > 0 ? [
+                    { label: 'Limpas', value: salasStats.limpas, color: '#10B981' },
+                    { label: 'Pendentes', value: salasStats.pendentes, color: '#F59E0B' },
+                    { label: 'Sujas', value: salasStats.sujas, color: '#EF4444' }
+                  ] : []}
+                  isDarkMode={isDarkMode}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Insights e Tendências */}
+          <View className="mb-8">
+            <View className="flex-row items-center mb-4">
+              <Lightbulb size={20} color={SENAC_COLORS.secondary} />
+              <Text className={`text-lg font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Insights Inteligentes
               </Text>
             </View>
-          )}
+            
+            <View className="space-y-4 gap-3">
+              {/* Progresso Geral */}
+              {salasStats.total > 0 && (
+                <View className={`p-4 rounded-2xl ${
+                  isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+                } backdrop-blur-sm border border-gray-200/20`}>
+                  <View className="flex-row items-center justify-between mb-3">
+                    <View className="flex-row items-center">
+                      <Target size={20} color={SENAC_COLORS.primary} />
+                      <Text className={`text-base font-semibold ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        Progresso Geral de Limpeza
+                      </Text>
+                    </View>
+                    <Text className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {salasStats.percentualLimpas}%
+                    </Text>
+                  </View>
+                  <View className={`h-4 rounded-full mb-3 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+                  }`}>
+                    <View 
+                      className="h-4 rounded-full"
+                      style={{ 
+                        width: `${salasStats.percentualLimpas}%`,
+                        backgroundColor: salasStats.percentualLimpas >= 80 ? '#10B981' : 
+                                       salasStats.percentualLimpas >= 60 ? '#F59E0B' : '#EF4444'
+                      }}
+                    />
+                  </View>
+                  <Text className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {salasStats.limpas} de {salasStats.total} salas limpas
+                  </Text>
+                </View>
+              )}
+
+              {/* Alertas e Recomendações */}
+              <View className={`p-4 rounded-2xl ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } backdrop-blur-sm border border-gray-200/20`}>
+                <View className="flex-row items-center mb-3">
+                  <TrendingUp size={20} color={SENAC_COLORS.primary} />
+                  <Text className={`text-base font-semibold ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Recomendações
+                  </Text>
+                </View>
+                
+                <View className="space-y-3">
+                  {salasStats.sujas > 0 && (
+                    <View className="flex-row items-center">
+                      <AlertCircle size={16} color="#EF4444" />
+                      <Text className={`text-sm ml-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {salasStats.sujas} sala(s) precisam de limpeza urgente
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {salasStats.pendentes > 0 && (
+                    <View className="flex-row items-center">
+                      <Clock size={16} color="#F59E0B" />
+                      <Text className={`text-sm ml-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {salasStats.pendentes} sala(s) com limpeza pendente
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {salasStats.percentualLimpas >= 90 && (
+                    <View className="flex-row items-center">
+                      <CheckCircle2 size={16} color="#10B981" />
+                      <Text className={`text-sm ml-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Excelente! Mais de 90% das salas estão limpas
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {salasStats.inativas > 0 && (
+                     <View className="flex-row items-center">
+                       <XCircle size={16} color="#6B7280" />
+                       <Text className={`text-sm ml-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                         {salasStats.inativas} sala(s) inativa(s) no sistema
+                       </Text>
+                     </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Resumo Executivo */}
+              <View className={`p-4 rounded-2xl ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } backdrop-blur-sm border border-gray-200/20`}>
+                <View className="flex-row items-center mb-3">
+                  <BarChart3 size={20} color={SENAC_COLORS.secondary} />
+                  <Text className={`text-base font-semibold ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Resumo Executivo
+                  </Text>
+                </View>
+                
+                <View className="grid grid-cols-2 gap-4">
+                  <View>
+                    <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                      EFICIÊNCIA
+                    </Text>
+                    <Text className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {salasStats.percentualLimpas}%
+                    </Text>
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      {salasStats.percentualLimpas >= 80 ? 'Excelente' : 
+                       salasStats.percentualLimpas >= 60 ? 'Bom' : 'Precisa melhorar'}
+                    </Text>
+                  </View>
+                  
+                  <View>
+                    <Text className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                      ATIVIDADE
+                    </Text>
+                    <Text className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {salasStats.pendentes + salasStats.sujas}
+                    </Text>
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Ações pendentes
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
 
 
 
 
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="flex-row items-center justify-center p-4 rounded-2xl backdrop-blur-sm"
-            style={{ backgroundColor: `${SENAC_COLORS.error}E6` }}
-          >
-            <LogOut size={20} color="white" />
-            <Text className="ml-3 text-base font-medium text-white">
-              Sair do Aplicativo
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+           <TouchableOpacity
+             onPress={handleLogout}
+             className="flex-row items-center justify-center p-4 rounded-2xl backdrop-blur-sm"
+             style={{ backgroundColor: `${SENAC_COLORS.error}E6` }}
+           >
+             <LogOut size={20} color="white" />
+             <Text className="ml-3 text-base font-medium text-white">
+               Sair do Aplicativo
+             </Text>
+           </TouchableOpacity>
+         </View>
+       </ScrollView>
 
-    </SafeAreaView>
-  );
-};
+       {/* Custom Alert */}
+       <CustomAlert
+         visible={alertVisible}
+         title={alertOptions.title}
+         message={alertOptions.message}
+         type={alertOptions.type}
+         confirmText={alertOptions.confirmText}
+         cancelText={alertOptions.cancelText}
+         onConfirm={alertOptions.onConfirm}
+         onCancel={alertOptions.onCancel}
+         showCancel={alertOptions.showCancel}
+       />
+     </SafeAreaView>
+   );
+ };
 
 export default InformationScreen;

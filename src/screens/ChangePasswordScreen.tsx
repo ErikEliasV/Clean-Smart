@@ -95,7 +95,6 @@ const ChangePasswordScreen: React.FC = () => {
             </Text>
           </View>
 
-
           <View className="items-center mb-8">
             <View className={`w-16 h-16 rounded-full items-center justify-center mb-4 ${
               isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
@@ -106,7 +105,6 @@ const ChangePasswordScreen: React.FC = () => {
               Digite sua senha atual e a nova senha desejada
             </Text>
           </View>
-
 
           <View className="space-y-6">
 
@@ -142,7 +140,6 @@ const ChangePasswordScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
             </View>
-
 
             <View>
               <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -180,7 +177,6 @@ const ChangePasswordScreen: React.FC = () => {
               </Text>
             </View>
 
-
             <View>
               <Text className={`text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Confirmar Nova Senha
@@ -213,7 +209,6 @@ const ChangePasswordScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
             </View>
-
 
             <TouchableOpacity
               className={`rounded-2xl py-4 items-center mt-8 ${

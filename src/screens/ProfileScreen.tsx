@@ -39,7 +39,6 @@ const ProfileScreen: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
-
   const handleRefreshUser = async () => {
     setIsRefreshing(true);
     const result = await getCurrentUser();
@@ -169,7 +168,6 @@ const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-
           <View className={`p-6 rounded-3xl mb-8 ${
             isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
           } backdrop-blur-sm border border-gray-200/20`}>
@@ -199,7 +197,6 @@ const ProfileScreen: React.FC = () => {
               </View>
             </View>
 
-
             <View className="space-y-4">
               <View className="flex-row items-center">
                 <Mail size={18} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
@@ -222,7 +219,6 @@ const ProfileScreen: React.FC = () => {
               </View>
             </View>
           </View>
-
 
           <TouchableOpacity
             onPress={handleLogout}

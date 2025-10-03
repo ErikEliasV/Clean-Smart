@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -16,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, Lock, User } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -24,6 +25,7 @@ const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const { login, isDarkMode } = useAuth();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   
   const usernameRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -49,7 +51,12 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      showAlert({
+        title: 'Erro',
+        message: 'Por favor, preencha todos os campos.',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
@@ -58,7 +65,12 @@ const LoginScreen: React.FC = () => {
     setIsLoading(false);
 
     if (!result.success) {
-      Alert.alert('Erro de Login', result.error || 'Credenciais inválidas');
+      showAlert({
+        title: 'Erro de Login',
+        message: result.error || 'Credenciais inválidas',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
@@ -197,6 +209,19 @@ const LoginScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </SafeAreaView>
   );
 };
