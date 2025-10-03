@@ -490,7 +490,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       if (data?.observacoes) {
         formData.append('observacoes', data.observacoes);
       } else {
-        // Sempre enviar o campo observacoes, mesmo que vazio
         formData.append('observacoes', '');
       }
       
@@ -561,7 +560,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
         formData.append('observacoes', data.observacoes);
         console.log('Adicionando observações ao FormData:', data.observacoes);
       } else {
-        // Sempre enviar o campo observacoes, mesmo que vazio
         formData.append('observacoes', '');
         console.log('Enviando FormData sem observações (campo vazio)');
       }
@@ -577,15 +575,13 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       console.log('Resposta marcar como suja:', response.status, response.statusText);
 
       if (response.ok || response.status === 201) {
-        // Atualizar local o estado das salas
         setSalas(prev => prev.map(sala => 
           sala.qr_code_id === qrCodeId ? {
             ...sala,
             status_limpeza: 'Suja'
           } : sala
         ));
-        
-        // Recarregar lista para pegar dados atualizados (incluindo observações)
+
         console.log('Recarregando dados das salas após marcar como suja...');
         await listSalas();
         
