@@ -98,7 +98,7 @@ const ChangePasswordScreen: React.FC = () => {
           <View className="items-center mb-8">
             <View className={`w-16 h-16 rounded-full items-center justify-center mb-4 ${
               isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-            } backdrop-blur-sm border border-gray-200/20`}>
+            }  border border-gray-200/20`}>
               <Lock size={32} color={SENAC_COLORS.primary} />
             </View>
             <Text className={`text-center text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -118,7 +118,7 @@ const ChangePasswordScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-800/50 border-gray-600/30 text-white' 
                       : 'bg-white/80 border-gray-200/30 text-gray-900'
-                  } backdrop-blur-sm pr-12`}
+                  }  pr-12`}
                   placeholder="Digite sua senha atual"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                   value={oldPassword}
@@ -151,7 +151,7 @@ const ChangePasswordScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-800/50 border-gray-600/30 text-white' 
                       : 'bg-white/80 border-gray-200/30 text-gray-900'
-                  } backdrop-blur-sm pr-12`}
+                  }  pr-12`}
                   placeholder="Digite a nova senha"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                   value={newPassword}
@@ -187,7 +187,7 @@ const ChangePasswordScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-800/50 border-gray-600/30 text-white' 
                       : 'bg-white/80 border-gray-200/30 text-gray-900'
-                  } backdrop-blur-sm pr-12`}
+                  }  pr-12`}
                   placeholder="Confirme a nova senha"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#8E8E93'}
                   value={confirmNewPassword}
