@@ -231,7 +231,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
       <TouchableOpacity 
         onPress={handleCardPress}
         activeOpacity={0.7}
-        className={`mx-4 mb-4 rounded-2xl overflow-hidden shadow-sm border ${
+        className={`mx-4 mb-4 rounded-2xl overflow-hidden border ${
           isDarkMode ? 'border-gray-700' : 'border-gray-200'
         }`}
         style={{
@@ -312,7 +312,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
                 </View>
               </View>
             </View>
-            <View className="flex-row space-x-2 gap-2">
+            <View className="flex-row gap-2">
               {!isInativa && isZelador(user, groups) && !isLimpa && !isEmLimpeza && (
                 <TouchableOpacity
                   onPress={handleMarcarLimpa}

@@ -246,7 +246,7 @@ const UserManagementScreen: React.FC = () => {
                   isDarkMode 
                     ? 'bg-gray-800/50 border-gray-700/30' 
                     : 'bg-white/80 border-gray-200/30'
-                } backdrop-blur-sm`}
+                } `}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center flex-1">
@@ -310,7 +310,7 @@ const UserManagementScreen: React.FC = () => {
         <View className="flex-1 justify-center items-center bg-black/50">
           <View className={`w-11/12 max-w-md p-6 rounded-3xl ${
             isDarkMode ? 'bg-gray-800/90' : 'bg-white/90'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          }  border border-gray-200/20`}>
             <View className="flex-row items-center justify-between mb-6">
               <Text className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Novo Usuário
@@ -330,7 +330,7 @@ const UserManagementScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-700/50 border-gray-600/30 text-white' 
                       : 'bg-gray-50/50 border-gray-300/30 text-gray-900'
-                  } backdrop-blur-sm`}
+                  } `}
                   placeholder="Nome de usuário"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
                   value={newUsername}
@@ -347,7 +347,7 @@ const UserManagementScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-700/50 border-gray-600/30 text-white' 
                       : 'bg-gray-50/50 border-gray-300/30 text-gray-900'
-                  } backdrop-blur-sm`}
+                  } `}
                   placeholder="email@exemplo.com"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
                   value={newEmail}
@@ -366,7 +366,7 @@ const UserManagementScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-700/50 border-gray-600/30 text-white' 
                       : 'bg-gray-50/50 border-gray-300/30 text-gray-900'
-                  } backdrop-blur-sm`}
+                  } `}
                   placeholder="Senha"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
                   value={newPassword}
@@ -384,7 +384,7 @@ const UserManagementScreen: React.FC = () => {
                     isDarkMode 
                       ? 'bg-gray-700/50 border-gray-600/30 text-white' 
                       : 'bg-gray-50/50 border-gray-300/30 text-gray-900'
-                  } backdrop-blur-sm`}
+                  } `}
                   placeholder="Confirmar senha"
                   placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
                   value={confirmPassword}
@@ -535,7 +535,7 @@ const UserManagementScreen: React.FC = () => {
         <View className="flex-1 justify-center items-center bg-black/50">
           <View className={`w-11/12 max-w-md p-6 rounded-3xl ${
             isDarkMode ? 'bg-gray-800/90' : 'bg-white/90'
-          } backdrop-blur-sm border border-gray-200/20`}>
+          }  border border-gray-200/20`}>
             <View className="flex-row items-center justify-between mb-6">
               <Text className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Detalhes do Usuário
