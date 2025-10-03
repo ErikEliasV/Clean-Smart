@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MapPin, Users, CheckCircle, Clock, Trash2, Edit, BrushCleaning, FileInput } from 'lucide-react-native';
@@ -7,7 +7,10 @@ import { Sala } from '../types/salas';
 import { useAuth, canViewLimpezaHistory } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
+import MarcarSujaModal from './MarcarSujaModal';
 import { SENAC_COLORS } from '../constants/colors';
+import CustomAlert from './CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 interface SalaCardProps {
   sala: Sala;
@@ -18,7 +21,8 @@ interface SalaCardProps {
 const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
   const { isDarkMode, user } = useAuth();
   const { groups, getGroupName } = useGroups();
-  const { marcarComoLimpa, deleteSala, marcarComoSuja } = useSalas();
+  const { marcarComoLimpa, deleteSala, marcarComoSuja, getSala } = useSalas();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [imageLoadError, setImageLoadError] = useState(false);
   const [showObservacaoModal, setShowObservacaoModal] = useState(false);
   const [observacao, setObservacao] = useState('');
@@ -40,9 +44,10 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
   };
 
   const getImageUrl = (imageUrl: string | null | undefined): string | null => {
+    const defaultImageUrl = 'https://plus.unsplash.com/premium_photo-1680807869780-e0876a6f3cd5?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c2FsYSUyMGRlJTIwYXVsYXxlbnwwfHwwfHx8MA%3D%3D';
     
     if (!imageUrl || imageUrl.trim() === '') {
-      return null;
+      return defaultImageUrl;
     }
     
     if (imageUrl.includes('10.1.1.210')) {
@@ -81,40 +86,72 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
     }
   };
 
-  const handleMarcarLimpa = () => {
+  const handleMarcarLimpa = async () => {
     if (navigation) {
-      navigation.navigate('LimpezaProcesso', { 
-        salaId: sala.qr_code_id, 
-        salaNome: sala.nome_numero 
-      });
+      try {
+        const result = await getSala(sala.qr_code_id);
+        
+        if (result.success && result.sala) {
+          navigation.navigate('LimpezaProcesso', {
+            salaId: result.sala.qr_code_id,
+            salaNome: result.sala.nome_numero,
+            qrCodeScanned: true
+          });
+        } else {
+          navigation.navigate('LimpezaProcesso', {
+            salaId: sala.qr_code_id,
+            salaNome: sala.nome_numero,
+            qrCodeScanned: true
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados da sala:', error);
+        navigation.navigate('LimpezaProcesso', {
+          salaId: sala.qr_code_id,
+          salaNome: sala.nome_numero,
+          qrCodeScanned: true
+        });
+      }
     }
   };
 
   const handleDelete = () => {
     if (!user?.is_superuser) {
-      Alert.alert('Erro', 'Apenas administradores podem excluir salas');
+      showAlert({
+        title: 'Erro',
+        message: 'Apenas administradores podem excluir salas',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
-    Alert.alert(
-      'Excluir Sala',
-      `Tem certeza que deseja excluir a ${sala.nome_numero}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            const result = await deleteSala(sala.qr_code_id);
-            if (result.success) {
-              Alert.alert('Sucesso', 'Sala excluída com sucesso!');
-            } else {
-              Alert.alert('Erro', result.error || 'Erro ao excluir sala');
-            }
-          }
+    showAlert({
+      title: 'Excluir Sala',
+      message: `Tem certeza que deseja excluir a ${sala.nome_numero}?`,
+      type: 'warning',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      showCancel: true,
+      onConfirm: async () => {
+        const result = await deleteSala(sala.qr_code_id);
+        if (result.success) {
+          showAlert({
+            title: 'Sucesso',
+            message: 'Sala excluída com sucesso!',
+            type: 'success',
+            confirmText: 'OK'
+          });
+        } else {
+          showAlert({
+            title: 'Erro',
+            message: result.error || 'Erro ao excluir sala',
+            type: 'error',
+            confirmText: 'OK'
+          });
         }
-      ]
-    );
+      }
+    });
   };
 
   const handleMarcarSuja = () => {
@@ -130,9 +167,19 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
     setObservacao('');
     
     if (result.success) {
-      Alert.alert('Sucesso', 'Sala marcada como suja!');
+      showAlert({
+        title: 'Sucesso',
+        message: 'Sala marcada como suja!',
+        type: 'success',
+        confirmText: 'OK'
+      });
     } else {
-      Alert.alert('Erro', result.error || 'Erro ao marcar sala como suja');
+      showAlert({
+        title: 'Erro',
+        message: result.error || 'Erro ao marcar sala como suja',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
@@ -150,24 +197,34 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
   const isLimpa = sala.status_limpeza === 'Limpa';
   const isEmLimpeza = sala.status_limpeza === 'Em Limpeza';
   const isSuja = sala.status_limpeza === 'Suja';
+  const isInativa = !sala.ativa;
   
-  let statusColor = '#F59E0B'; // Default: Limpeza Pendente
+  let statusColor = '#F59E0B'; 
+  let statusBackgroundColor = '#B45309'; // orange-700
   let statusIcon = Clock;
   
-  if (isLimpa) {
+  if (isInativa) {
+    statusColor = '#6B7280';
+    statusBackgroundColor = '#374151'; // gray-700
+    statusIcon = Clock;
+  } else if (isLimpa) {
     statusColor = '#10B981';
+    statusBackgroundColor = '#065F46'; // green-700
     statusIcon = CheckCircle;
   } else if (isEmLimpeza) {
     statusColor = '#3B82F6';
+    statusBackgroundColor = '#1D4ED8'; // blue-700
     statusIcon = Clock;
   } else if (isSuja) {
     statusColor = '#EF4444';
+    statusBackgroundColor = '#B91C1C'; // red-700
     statusIcon = Trash2;
   }
   
   const StatusIcon = statusIcon;
 
   const imageUrl = getImageUrl(sala.imagem);
+  const hasCustomImage = sala.imagem && sala.imagem.trim() !== '';
 
   return (
     <>
@@ -178,7 +235,10 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
           isDarkMode ? 'border-gray-700' : 'border-gray-200'
         }`}
         style={{
-          backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+          backgroundColor: isInativa 
+            ? (isDarkMode ? 'rgba(17, 24, 39, 0.8)' : 'rgba(243, 244, 246, 0.9)')
+            : (isDarkMode ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.9)'),
+          opacity: isInativa ? 0.6 : 1,
         }}
       >
       {imageUrl && !imageLoadError && (
@@ -186,17 +246,18 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
           source={{ uri: imageUrl }}
           className="absolute inset-0 w-full h-full"
           resizeMode="cover"
-          onError={(error) => {
-            console.log('=== IMAGE ERROR DEBUG ===');
-            console.log('Erro ao carregar imagem de fundo da sala:', error);
-            console.log('URL que causou erro:', imageUrl);
-            console.log('sala.imagem original:', sala.imagem);
-            setImageLoadError(true);
-          }}
+          
           onLoad={() => {
             console.log('=== IMAGE LOAD SUCCESS ===');
             console.log('Imagem de fundo carregada com sucesso:', imageUrl);
+            console.log('É imagem customizada da sala?', hasCustomImage);
             setImageLoadError(false);
+          }}
+          
+          onError={() => {
+            console.log('=== IMAGE LOAD ERROR ===');
+            console.log('Erro ao carregar imagem:', imageUrl);
+            setImageLoadError(true);
           }}
         />
       )}
@@ -204,9 +265,11 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
       <View 
         className="absolute inset-0"
         style={{
-          backgroundColor: isDarkMode 
-            ? 'rgba(0, 0, 0, 0.6)' 
-            : 'rgba(255, 255, 255, 0.5)'
+          backgroundColor: imageUrl && !imageLoadError 
+            ? (isDarkMode ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.2)')  // Overlay quando há imagem (custom ou padrão)
+            : isInativa 
+              ? 'rgba(255, 255, 255, 1)'  
+              : 'rgba(0, 0, 0, 0)'  // Sem overlay quando há erro de carregamento
         }}
       />
       
@@ -216,13 +279,15 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
               <Text className={`text-lg font-bold ${
                 isDarkMode 
                   ? 'text-white' 
-                  : 'text-gray-900'
+                  : (imageUrl && !imageLoadError) ? 'text-white' : 'text-gray-900'
               }`}
-                style={isDarkMode ? { 
-                  textShadowColor: 'rgba(0, 0, 0, 0.8)', 
-                  textShadowOffset: { width: 1, height: 1 }, 
-                  textShadowRadius: 2 
-                } : {}}
+                style={
+                  (isDarkMode || (imageUrl && !imageLoadError)) ? { 
+                    textShadowColor: 'rgba(0, 0, 0, 0.8)', 
+                    textShadowOffset: { width: 1, height: 1 }, 
+                    textShadowRadius: 2 
+                  } : {}
+                }
               >
                 {sala.nome_numero}
               </Text>
@@ -230,46 +295,39 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
                 <View 
                   className="flex-row items-center px-2 py-1 rounded-full"
                   style={{ 
-                    backgroundColor: isDarkMode 
-                      ? statusColor + '20' 
-                      : statusColor + '15' 
+                    backgroundColor: statusBackgroundColor
                   }}
                 >
                   <StatusIcon size={16} color={statusColor} />
                   <Text 
-                    className={`ml-2 text-sm font-medium ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}
-                    style={{ 
-                      color: statusColor,
-                      ...(isDarkMode ? {
-                        textShadowColor: 'rgba(0, 0, 0, 0.8)', 
-                        textShadowOffset: { width: 1, height: 1 }, 
-                        textShadowRadius: 2 
-                      } : {})
+                    className="ml-2 text-sm font-medium text-white"
+                    style={{
+                      textShadowColor: 'rgba(0, 0, 0, 0.5)', 
+                      textShadowOffset: { width: 0, height: 1 }, 
+                      textShadowRadius: 2 
                     }}
                   >
-                    {sala.status_limpeza}
+                    {isInativa ? 'Inativa' : sala.status_limpeza}
                   </Text>
                 </View>
               </View>
             </View>
             <View className="flex-row space-x-2 gap-2">
-              {isZelador(user, groups) && !isLimpa && !isEmLimpeza && (
+              {!isInativa && isZelador(user, groups) && !isLimpa && !isEmLimpeza && (
                 <TouchableOpacity
                   onPress={handleMarcarLimpa}
                   className="p-2 rounded-full"
-                  style={{ backgroundColor: isDarkMode ? '#10B981' + '20' : '#10B981' + '20' }}
+                  style={{ backgroundColor: '#065F46' }} // green-700
                 >
                   <BrushCleaning size={20} color="#10B981" />
                 </TouchableOpacity>
               )}
               
-              {isSolicitanteServico(user, groups) && !isSuja && (
+              {!isInativa && isSolicitanteServico(user, groups) && !isSuja && (
                 <TouchableOpacity
                   onPress={handleMarcarSuja}
                   className="p-2 rounded-full"
-                  style={{ backgroundColor: '#F59E0B' + '20' }}
+                  style={{ backgroundColor: '#B45309' }} // orange-700
                 >
                   <FileInput size={20} color="#F59E0B" />
                 </TouchableOpacity>
@@ -279,7 +337,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
                 <TouchableOpacity
                   onPress={() => onEdit(sala)}
                   className="p-2 rounded-full"
-                  style={{ backgroundColor: '#3B82F6' + '20' }}
+                  style={{ backgroundColor: '#1D4ED8' }} // blue-700
                 >
                   <Edit size={20} color="#3B82F6" />
                 </TouchableOpacity>
@@ -289,7 +347,7 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
                 <TouchableOpacity
                   onPress={handleDelete}
                   className="p-2 rounded-full"
-                  style={{ backgroundColor: '#EF4444' + '20' }}
+                  style={{ backgroundColor: '#B91C1C' }} // red-700
                 >
                   <Trash2 size={20} color="#EF4444" />
                 </TouchableOpacity>
@@ -299,11 +357,16 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
 
           <View className="space-y-2">
             <View className="flex-row items-center">
-              <Users size={16} color={isDarkMode ? "rgba(255, 255, 255, 0.9)" : "#6B7280"} />
+              <Users 
+                size={16} 
+                color={isDarkMode ? "rgba(255, 255, 255, 0.9)" : 
+                       (imageUrl && !imageLoadError) ? "rgba(255, 255, 255, 0.9)" : "#6B7280"} 
+              />
               <Text className={`ml-2 text-sm ${
-                isDarkMode ? 'text-white' : 'text-gray-700'
+                isDarkMode ? 'text-white' : 
+                (imageUrl && !imageLoadError) ? 'text-white' : 'text-gray-700'
               }`}
-                style={isDarkMode ? { 
+                style={(isDarkMode || (imageUrl && !imageLoadError)) ? { 
                   textShadowColor: 'rgba(0, 0, 0, 0.8)', 
                   textShadowOffset: { width: 1, height: 1 }, 
                   textShadowRadius: 2 
@@ -314,11 +377,16 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
             </View>
 
             <View className="flex-row items-center">
-              <MapPin size={16} color={isDarkMode ? "rgba(255, 255, 255, 0.9)" : "#6B7280"} />
+              <MapPin 
+                size={16} 
+                color={isDarkMode ? "rgba(255, 255, 255, 0.9)" : 
+                       (imageUrl && !imageLoadError) ? "rgba(255, 255, 255, 0.9)" : "#6B7280"} 
+              />
               <Text className={`ml-2 text-sm ${
-                isDarkMode ? 'text-white' : 'text-gray-700'
+                isDarkMode ? 'text-white' : 
+                (imageUrl && !imageLoadError) ? 'text-white' : 'text-gray-700'
               }`}
-                style={isDarkMode ? { 
+                style={(isDarkMode || (imageUrl && !imageLoadError)) ? { 
                   textShadowColor: 'rgba(0, 0, 0, 0.8)', 
                   textShadowOffset: { width: 1, height: 1 }, 
                   textShadowRadius: 2 
@@ -330,9 +398,10 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
 
             {sala.descricao && (
               <Text className={`text-sm mt-2 ${
-                isDarkMode ? 'text-white' : 'text-gray-700'
+                isDarkMode ? 'text-white' : 
+                (imageUrl && !imageLoadError) ? 'text-white' : 'text-gray-700'
               }`}
-                style={isDarkMode ? { 
+                style={(isDarkMode || (imageUrl && !imageLoadError)) ? { 
                   textShadowColor: 'rgba(0, 0, 0, 0.8)', 
                   textShadowOffset: { width: 1, height: 1 }, 
                   textShadowRadius: 2 
@@ -343,12 +412,14 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
             )}
 
             <View className={`mt-3 p-3 rounded-xl ${
-              isDarkMode ? 'bg-black/30' : 'bg-white/20'
+              isDarkMode ? 'bg-black/30' : 
+              (imageUrl && !imageLoadError) ? 'bg-black/15' : 'bg-white/20'
             }`}>
               <Text className={`text-xs font-medium ${
-                isDarkMode ? 'text-white/80' : 'text-gray-600'
+                isDarkMode ? 'text-white/80' : 
+                (imageUrl && !imageLoadError) ? 'text-white/80' : 'text-gray-600'
               }`}
-                style={isDarkMode ? { 
+                style={(isDarkMode || (imageUrl && !imageLoadError)) ? { 
                   textShadowColor: 'rgba(0, 0, 0, 0.8)', 
                   textShadowOffset: { width: 1, height: 1 }, 
                   textShadowRadius: 2 
@@ -357,9 +428,10 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
                 ÚLTIMA LIMPEZA
               </Text>
               <Text className={`text-sm mt-1 ${
-                isDarkMode ? 'text-white' : 'text-gray-800'
+                isDarkMode ? 'text-white' : 
+                (imageUrl && !imageLoadError) ? 'text-white' : 'text-gray-800'
               }`}
-                style={isDarkMode ? { 
+                style={(isDarkMode || (imageUrl && !imageLoadError)) ? { 
                   textShadowColor: 'rgba(0, 0, 0, 0.8)', 
                   textShadowOffset: { width: 1, height: 1 }, 
                   textShadowRadius: 2 
@@ -369,9 +441,10 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
               </Text>
               {sala.ultima_limpeza_funcionario && (
                 <Text className={`text-xs mt-1 ${
-                  isDarkMode ? 'text-white/80' : 'text-gray-600'
+                  isDarkMode ? 'text-white/80' : 
+                  (imageUrl && !imageLoadError) ? 'text-white/80' : 'text-gray-600'
                 }`}
-                  style={isDarkMode ? { 
+                  style={(isDarkMode || (imageUrl && !imageLoadError)) ? { 
                     textShadowColor: 'rgba(0, 0, 0, 0.8)', 
                     textShadowOffset: { width: 1, height: 1 }, 
                     textShadowRadius: 2 
@@ -385,77 +458,26 @@ const SalaCard: React.FC<SalaCardProps> = ({ sala, onEdit, navigation }) => {
       </View>
     </TouchableOpacity>
 
-    <Modal
+    <MarcarSujaModal
       visible={showObservacaoModal}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={handleCancelarMarcarSuja}
-    >
-      <View className="flex-1 bg-black/50 justify-center items-center px-6">
-        <View className={`w-full max-w-md rounded-2xl p-6 ${
-          isDarkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
-          <Text className={`text-xl font-bold mb-4 ${
-            isDarkMode ? 'text-white' : 'text-gray-900'
-          }`}>
-            Marcar Sala como Suja
-          </Text>
-          
-          <Text className={`text-base mb-2 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
-            Sala: {sala.nome_numero}
-          </Text>
-          
-          <Text className={`text-sm mb-4 ${
-            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            Adicione uma observação (opcional) sobre o motivo da solicitação:
-          </Text>
-          
-          <TextInput
-            value={observacao}
-            onChangeText={setObservacao}
-            placeholder="Ex: Material derramado no chão, banheiro entupido, etc."
-            placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
-            multiline={true}
-            numberOfLines={4}
-            className={`w-full p-3 rounded-xl border text-base ${
-              isDarkMode 
-                ? 'bg-gray-700 border-gray-600 text-white' 
-                : 'bg-gray-50 border-gray-300 text-gray-900'
-            }`}
-            style={{
-              textAlignVertical: 'top',
-            }}
-          />
-          
-          <View className="flex-row justify-end space-x-3 mt-6">
-            <TouchableOpacity
-              onPress={handleCancelarMarcarSuja}
-              className="px-6 py-3 rounded-xl"
-              style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
-            >
-              <Text className={`font-medium ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
-                Cancelar
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={handleConfirmarMarcarSuja}
-              className="px-6 py-3 rounded-xl"
-              style={{ backgroundColor: '#F59E0B' }}
-            >
-              <Text className="font-medium text-white">
-                Marcar como Suja
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
+      sala={sala}
+      observacao={observacao}
+      onObservacaoChange={setObservacao}
+      onConfirm={handleConfirmarMarcarSuja}
+      onCancel={handleCancelarMarcarSuja}
+    />
+
+    <CustomAlert
+      visible={alertVisible}
+      title={alertOptions.title}
+      message={alertOptions.message}
+      type={alertOptions.type}
+      confirmText={alertOptions.confirmText}
+      cancelText={alertOptions.cancelText}
+      onConfirm={alertOptions.onConfirm}
+      onCancel={alertOptions.onCancel}
+      showCancel={alertOptions.showCancel}
+    />
     </>
   );
 };

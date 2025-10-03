@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
 import { useAuth } from '../contexts/AuthContext';
+import CustomAlert from './CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 interface ProfileImagePickerProps {
   currentImageUri?: string | null;
@@ -18,6 +20,7 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
   size = 120,
 }) => {
   const { isDarkMode } = useAuth();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
 
@@ -28,11 +31,12 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permissão Necessária',
-        'Precisamos de permissão para acessar sua galeria de fotos.',
-        [{ text: 'OK' }]
-      );
+      showAlert({
+        title: 'Permissão Necessária',
+        message: 'Precisamos de permissão para acessar sua galeria de fotos.',
+        type: 'info',
+        confirmText: 'OK'
+      });
       return false;
     }
     return true;
@@ -57,7 +61,12 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
       }
     } catch (error) {
       console.error('Erro ao selecionar imagem:', error);
-      Alert.alert('Erro', 'Não foi possível selecionar a imagem.');
+      showAlert({
+        title: 'Erro',
+        message: 'Não foi possível selecionar a imagem.',
+        type: 'error',
+        confirmText: 'OK'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -66,11 +75,12 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permissão Necessária',
-        'Precisamos de permissão para acessar sua câmera.',
-        [{ text: 'OK' }]
-      );
+      showAlert({
+        title: 'Permissão Necessária',
+        message: 'Precisamos de permissão para acessar sua câmera.',
+        type: 'info',
+        confirmText: 'OK'
+      });
       return;
     }
 
@@ -88,33 +98,50 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
       }
     } catch (error) {
       console.error('Erro ao tirar foto:', error);
-      Alert.alert('Erro', 'Não foi possível tirar a foto.');
+      showAlert({
+        title: 'Erro',
+        message: 'Não foi possível tirar a foto.',
+        type: 'error',
+        confirmText: 'OK'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const showImageOptions = () => {
-    Alert.alert(
-      'Selecionar Foto',
-      'Escolha uma opção:',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Galeria', onPress: pickImage },
-        { text: 'Câmera', onPress: takePhoto },
-      ]
-    );
+    showAlert({
+      title: 'Selecionar Foto',
+      message: 'Escolha uma opção:',
+      type: 'info',
+      confirmText: 'Galeria',
+      cancelText: 'Cancelar',
+      showCancel: true,
+      onConfirm: pickImage,
+      onCancel: () => {
+        showAlert({
+          title: 'Selecionar Foto',
+          message: 'Deseja usar a câmera?',
+          type: 'info',
+          confirmText: 'Câmera',
+          cancelText: 'Cancelar',
+          showCancel: true,
+          onConfirm: takePhoto
+        });
+      }
+    });
   };
 
   const handleRemoveImage = () => {
-    Alert.alert(
-      'Remover Foto',
-      'Tem certeza que deseja remover sua foto de perfil?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Remover', style: 'destructive', onPress: onImageRemoved },
-      ]
-    );
+    showAlert({
+      title: 'Remover Foto',
+      message: 'Tem certeza que deseja remover sua foto de perfil?',
+      type: 'warning',
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      showCancel: true,
+      onConfirm: onImageRemoved
+    });
   };
 
   return (
@@ -177,8 +204,18 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
         {currentImageUri && !isLoading && (
           <TouchableOpacity
             onPress={handleRemoveImage}
-            className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
-            style={{ width: 28, height: 28 }}
+            className="absolute bg-red-500 rounded-full items-center justify-center"
+            style={{ 
+              width: 28, 
+              height: 28,
+              top: -6,
+              right: -6,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5
+            }}
           >
             <X size={16} color="white" />
           </TouchableOpacity>
@@ -200,6 +237,19 @@ const ProfileImagePicker: React.FC<ProfileImagePickerProps> = ({
           {imageLoadError ? 'Tentar Novamente' : (currentImageUri ? 'Alterar Foto' : 'Adicionar Foto')}
         </Text>
       </TouchableOpacity>
+
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </View>
   );
 };

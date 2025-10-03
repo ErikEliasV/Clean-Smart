@@ -34,5 +34,3 @@ export const QRCodeProvider: React.FC<QRCodeProviderProps> = ({ children }) => {
   );
 };
 
-
-

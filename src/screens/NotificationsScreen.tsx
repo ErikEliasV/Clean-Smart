@@ -6,12 +6,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  RefreshControl,
-  Linking
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ChevronLeft, Bell, Check, CheckCheck, ExternalLink } from 'lucide-react-native';
+import { ChevronLeft, Bell, Check, CheckCheck } from 'lucide-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationsContext';
 import { SENAC_COLORS } from '../constants/colors';
@@ -81,20 +80,6 @@ const NotificationsScreen: React.FC = () => {
     if (!notificacao.lida) {
       await handleMarkAsRead(notificacao.id);
     }
-    
-    if (notificacao.link && notificacao.link !== '/') {
-      try {
-        const url = `https://zeladoria.tsr.net.br${notificacao.link}`;
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert('Erro', 'Não foi possível abrir o link');
-        }
-      } catch (error) {
-        Alert.alert('Erro', 'Não foi possível abrir o link');
-      }
-    }
   };
 
   const formatNotificationDate = (dateString: string) => {
@@ -126,8 +111,8 @@ const NotificationsScreen: React.FC = () => {
       }}
     >
       <View className={`p-4 ${
-        isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-      } backdrop-blur-sm`}>
+        isDarkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         <View className="flex-row items-start justify-between">
           <View className="flex-1 mr-3">
             <View className="flex-row items-start">
@@ -150,14 +135,6 @@ const NotificationsScreen: React.FC = () => {
                     {formatNotificationDate(notificacao.data_criacao)}
                   </Text>
                   
-                  {notificacao.link && notificacao.link !== '/' && (
-                    <View className="flex-row items-center ml-2">
-                      <ExternalLink size={12} color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
-                      <Text className={`text-xs ml-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Link disponível
-                      </Text>
-                    </View>
-                  )}
                 </View>
               </View>
             </View>
@@ -169,24 +146,27 @@ const NotificationsScreen: React.FC = () => {
                 onPress={() => handleMarkAsRead(notificacao.id)}
                 disabled={isMarkingAsRead === notificacao.id}
                 className="p-2 rounded-full"
-                style={{ backgroundColor: SENAC_COLORS.primary + '20' }}
+                style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}
               >
                 {isMarkingAsRead === notificacao.id ? (
-                  <ActivityIndicator size="small" color={SENAC_COLORS.primary} />
+                  <ActivityIndicator size="small" color={isDarkMode ? '#9CA3AF' : '#6B7280'} />
                 ) : (
                   <Check 
                     size={16} 
-                    color={SENAC_COLORS.primary}
+                    color={isDarkMode ? '#9CA3AF' : '#6B7280'}
                   />
                 )}
               </TouchableOpacity>
             )}
             
             {notificacao.lida && (
-              <View className="p-2 rounded-full" style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F4F6' }}>
+              <View 
+                className="p-2 rounded-full" 
+                style={{ backgroundColor: SENAC_COLORS.primary + '20' }}
+              >
                 <CheckCheck 
                   size={16} 
-                  color={isDarkMode ? '#9CA3AF' : '#6B7280'} 
+                  color={SENAC_COLORS.primary} 
                 />
               </View>
             )}
@@ -289,8 +269,8 @@ const NotificationsScreen: React.FC = () => {
               elevation: 3,
             }}>
               <View className={`p-4 ${
-                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
-              } backdrop-blur-sm`}>
+                isDarkMode ? 'bg-gray-800' : 'bg-white'
+              }`}>
                 <View className="flex-row items-center justify-between">
                   <View>
                     <Text className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>

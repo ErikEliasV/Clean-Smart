@@ -9,16 +9,22 @@ import {
   TextInput,
   Image,
   Modal,
-  Alert,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, X } from 'lucide-react-native';
-import { useAuth, canManageSalas } from '../contexts/AuthContext';
+import { useAuth, canManageSalas, isAdmin } from '../contexts/AuthContext';
+import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
 import { useQRCode } from '../contexts/QRCodeContext';
 import { Sala } from '../types/salas';
 import SalaCard from '../components/SalaCard';
 import SalaForm from '../components/SalaForm';
+import MarcarSujaModal from '../components/MarcarSujaModal';
+import SalaLimpaModal from '../components/SalaLimpaModal';
+import ActionSelectionModal from '../components/ActionSelectionModal';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 import { SENAC_COLORS } from '../constants/colors';
 
 interface SalasScreenProps {
@@ -27,15 +33,46 @@ interface SalasScreenProps {
 
 const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   const { isDarkMode, user } = useAuth();
-  const { salas, isLoading, listSalas, getSala } = useSalas();
+  const { groups, getGroupName } = useGroups();
+  const { salas, isLoading, listSalas, getSala, marcarComoSuja } = useSalas();
   const { qrCodeData, clearQRCodeData } = useQRCode();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [showForm, setShowForm] = useState(false);
   const [editingSala, setEditingSala] = useState<Sala | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'limpa' | 'pendente'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'limpa' | 'suja' | 'pendente' | 'inativas'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSalaLimpaModal, setShowSalaLimpaModal] = useState(false);
   const [salaLimpaData, setSalaLimpaData] = useState<{ nome: string; qrCode: string } | null>(null);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionModalData, setActionModalData] = useState<{ sala: Sala; actions: string[] } | null>(null);
+  const [showMarcarSujaModal, setShowMarcarSujaModal] = useState(false);
+  const [marcarSujaData, setMarcarSujaData] = useState<{ sala: Sala } | null>(null);
+  const [observacaoSuja, setObservacaoSuja] = useState('');
+    
+  const isZelador = (user: any, groups: any[]): boolean => {
+    if (!user?.groups || !groups.length) return false;
+    return user.groups.some((groupId: number) => {
+      const groupName = getGroupName(groupId);
+      return groupName === 'Zeladoria';
+    });
+  };
+
+  const isSolicitanteServico = (user: any, groups: any[]): boolean => {
+    if (!user?.groups || !groups.length) return false;
+    return user.groups.some((groupId: number) => {
+      const groupName = getGroupName(groupId);
+      return groupName === 'Solicitante de Serviços';
+    });
+  };
+
+  const getUserRoles = (user: any, groups: any[]): string[] => {
+    const roles: string[] = [];
+    if (isAdmin(user)) roles.push('administrador');
+    if (isZelador(user, groups)) roles.push('zelador');
+    if (isSolicitanteServico(user, groups)) roles.push('solicitante');
+    return roles;
+  };
 
   useEffect(() => {
     loadSalas();
@@ -48,31 +85,21 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
           const result = await getSala(qrCodeData);
           
           if (result.success && result.sala) {
-            if (result.sala.status_limpeza === 'Limpa') {
-              setSalaLimpaData({
-                nome: result.sala.nome_numero,
-                qrCode: qrCodeData
-              });
-              setShowSalaLimpaModal(true);
-            } else {
-              navigation.navigate('LimpezaProcesso', {
-                salaId: qrCodeData,
-                salaNome: result.sala.nome_numero,
-                qrCodeScanned: true
-              });
-            }
+            processarQRCodePorPapel(result.sala);
           } else {
-            navigation.navigate('LimpezaProcesso', {
-              salaId: qrCodeData,
-              salaNome: 'Sala Escaneada',
-              qrCodeScanned: true
+            showAlert({
+              title: 'Erro',
+              message: 'Sala não encontrada.',
+              type: 'error',
+              confirmText: 'OK'
             });
           }
         } catch (error) {
-          navigation.navigate('LimpezaProcesso', {
-            salaId: qrCodeData,
-            salaNome: 'Sala Escaneada',
-            qrCodeScanned: true
+          showAlert({
+            title: 'Erro',
+            message: 'Erro ao buscar dados da sala.',
+            type: 'error',
+            confirmText: 'OK'
           });
         }
         
@@ -82,6 +109,75 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
       buscarDadosSala();
     }
   }, [qrCodeData, navigation, clearQRCodeData, getSala]);
+
+  const processarQRCodePorPapel = (sala: Sala) => {
+    const roles = getUserRoles(user, groups);
+    
+    console.log('=== PROCESSAR QR CODE POR PAPEL ===');
+    console.log('Sala:', sala.nome_numero);
+    console.log('Papéis do usuário:', roles);
+    console.log('Status da sala:', sala.status_limpeza);
+    
+    if (roles.length > 1) {
+      setActionModalData({ sala, actions: roles });
+      setShowActionModal(true);
+      return;
+    }
+    
+    if (roles.length === 1) {
+      executarAcaoPorPapel(roles[0], sala);
+      return;
+    }
+    
+    showAlert({
+      title: 'Acesso Negado',
+      message: 'Você não tem permissão para realizar nenhuma ação com salas.',
+      type: 'warning',
+      confirmText: 'OK'
+    });
+  };
+
+  const executarAcaoPorPapel = (papel: string, sala: Sala) => {
+    console.log('=== EXECUTAR AÇÃO POR PAPEL ===');
+    console.log('Papel:', papel);
+    console.log('Sala:', sala.nome_numero);
+    
+    switch (papel) {
+      case 'zelador':
+        if (sala.status_limpeza === 'Limpa') {
+          setSalaLimpaData({
+            nome: sala.nome_numero,
+            qrCode: sala.qr_code_id
+          });
+          setShowSalaLimpaModal(true);
+        } else {
+          navigation.navigate('LimpezaProcesso', {
+            salaId: sala.qr_code_id,
+            salaNome: sala.nome_numero,
+            qrCodeScanned: true
+          });
+        }
+        break;
+        
+      case 'solicitante':
+        setMarcarSujaData({ sala });
+        setShowMarcarSujaModal(true);
+        break;
+        
+      case 'administrador':
+        setEditingSala(sala);
+        setShowForm(true);
+        break;
+        
+      default:
+        showAlert({
+          title: 'Erro',
+          message: 'Papel de usuário não reconhecido.',
+          type: 'error',
+          confirmText: 'OK'
+        });
+    }
+  };
 
   const loadSalas = async () => {
     await listSalas();
@@ -116,14 +212,56 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
     setEditingSala(undefined);
   };
 
+  const handleMarcarComoSuja = async () => {
+    if (!marcarSujaData) return;
+    
+    try {
+      const data = observacaoSuja.trim() ? { observacoes: observacaoSuja.trim() } : undefined;
+      const result = await marcarComoSuja(marcarSujaData.sala.qr_code_id, data);
+      
+      if (result.success) {
+        showAlert({
+          title: 'Sucesso',
+          message: `A sala "${marcarSujaData.sala.nome_numero}" foi marcada como suja.`,
+          type: 'success',
+          confirmText: 'OK'
+        });
+        setShowMarcarSujaModal(false);
+        setMarcarSujaData(null);
+        setObservacaoSuja('');
+        await loadSalas();
+      } else {
+        showAlert({
+          title: 'Erro',
+          message: result.error || 'Erro ao marcar sala como suja',
+          type: 'error',
+          confirmText: 'OK'
+        });
+      }
+    } catch (error) {
+      showAlert({
+        title: 'Erro',
+        message: 'Erro ao marcar sala como suja',
+        type: 'error',
+        confirmText: 'OK'
+      });
+    }
+  };
+
   const clearSearch = () => {
     setSearchQuery('');
   };
 
   const filteredSalas = salas.filter(sala => {
+    if (!isAdmin(user) && !sala.ativa) {
+      return false;
+    }
+
     let statusMatch = true;
     if (filterStatus === 'limpa') statusMatch = sala.status_limpeza === 'Limpa';
+    if (filterStatus === 'suja') statusMatch = sala.status_limpeza === 'Suja';
     if (filterStatus === 'pendente') statusMatch = sala.status_limpeza === 'Limpeza Pendente';
+    if (filterStatus === 'inativas') statusMatch = !sala.ativa;
 
     let searchMatch = true;
     if (searchQuery.trim()) {
@@ -141,7 +279,9 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   const getStatusCounts = () => {
     const limpa = salas.filter(s => s.status_limpeza === 'Limpa').length;
     const pendente = salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length;
-    return { limpa, pendente, total: salas.length };
+    const suja = salas.filter(s => s.status_limpeza === 'Suja').length;
+    const inativas = isAdmin(user) ? salas.filter(s => !s.ativa).length : 0;
+    return { limpa, pendente, suja, inativas, total: salas.length };
   };
 
   const statusCounts = getStatusCounts();
@@ -159,14 +299,15 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
     return (
       <TouchableOpacity
         onPress={() => setFilterStatus(status)}
-        className={`px-4 py-2 rounded-full mr-3 ${isActive
+        className={`px-4 py-2 rounded-full ${isActive
             ? 'opacity-100'
             : 'opacity-70'
           }`}
         style={{
           backgroundColor: isActive
             ? SENAC_COLORS.primary
-            : (isDarkMode ? '#374151' : '#F3F4F6')
+            : (isDarkMode ? '#374151' : '#F3F4F6'),
+          marginRight: 12,
         }}
       >
         <Text className={`text-sm font-medium ${isActive
@@ -273,11 +414,19 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        <View className="flex-row">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 16 }}
+        >
           <FilterButton status="all" label="Todas" count={statusCounts.total} />
           <FilterButton status="limpa" label="Limpas" count={statusCounts.limpa} />
           <FilterButton status="pendente" label="Pendentes" count={statusCounts.pendente} />
-        </View>
+          <FilterButton status="suja" label="Sujas" count={statusCounts.suja} />
+          {isAdmin(user) && (
+            <FilterButton status="inativas" label="Inativas" count={statusCounts.inativas} />
+          )}
+        </ScrollView>
 
         {searchQuery.trim() && (
           <View className="mt-3">
@@ -362,6 +511,65 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Componentes de Modal Reutilizáveis */}
+      <ActionSelectionModal
+        visible={showActionModal}
+        sala={actionModalData?.sala || null}
+        actions={actionModalData?.actions || []}
+        onActionSelect={(action) => {
+          if (actionModalData) {
+            setShowActionModal(false);
+            executarAcaoPorPapel(action, actionModalData.sala);
+          }
+        }}
+        onCancel={() => {
+          setShowActionModal(false);
+          setActionModalData(null);
+        }}
+      />
+
+      <MarcarSujaModal
+        visible={showMarcarSujaModal}
+        sala={marcarSujaData?.sala || null}
+        observacao={observacaoSuja}
+        onObservacaoChange={setObservacaoSuja}
+        onConfirm={handleMarcarComoSuja}
+        onCancel={() => {
+          setShowMarcarSujaModal(false);
+          setMarcarSujaData(null);
+          setObservacaoSuja('');
+        }}
+      />
+
+      <SalaLimpaModal
+        visible={showSalaLimpaModal}
+        salaNome={salaLimpaData?.nome || null}
+        onClose={handleFecharModalSalaLimpa}
+      />
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </SafeAreaView>
   );
 };

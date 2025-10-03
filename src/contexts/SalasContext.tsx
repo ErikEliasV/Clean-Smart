@@ -264,6 +264,9 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       console.log('=== UPDATE SALA DEBUG ===');
       console.log('qrCodeId:', qrCodeId);
       console.log('salaData recebido:', salaData);
+      console.log('Campo ativa:', (salaData as any).ativa);
+      console.log('Campo imagem:', salaData.imagem);
+      console.log('Tipo da imagem:', typeof salaData.imagem);
       
       console.log('Usando FormData para atualização (conforme documentação)');
       const formData = new FormData();
@@ -296,21 +299,33 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       if (salaData.status_limpeza !== undefined) {
         formData.append('status_limpeza', salaData.status_limpeza);
       }
+      if ((salaData as any).ativa !== undefined) {
+        console.log('Adicionando campo ativa ao FormData:', (salaData as any).ativa);
+        formData.append('ativa', (salaData as any).ativa.toString());
+      }
       
       if (salaData.imagem !== undefined) {
+        console.log('Processando campo imagem...');
         if (salaData.imagem === null) {
           console.log('Removendo imagem (enviando campo vazio)');
           formData.append('imagem', '');
-        } else if (salaData.imagem) {
-          console.log('Adicionando nova imagem:', salaData.imagem);
-          formData.append('imagem', {
-            uri: salaData.imagem.uri,
-            type: 'image/jpeg',
-            name: 'sala_image.jpg',
-          } as any);
+        } else if (salaData.imagem && typeof salaData.imagem === 'object' && salaData.imagem.uri) {
+          if (salaData.imagem.uri.startsWith('file://') || salaData.imagem.uri.startsWith('content://')) {
+            console.log('Adicionando nova imagem:', salaData.imagem);
+            formData.append('imagem', {
+              uri: salaData.imagem.uri,
+              type: 'image/jpeg',
+              name: 'sala_image.jpg',
+            } as any);
+          } else {
+            console.log('Imagem existente detectada, não reenviando:', salaData.imagem.uri);
+          }
         }
       }
 
+      console.log('Enviando requisição para:', `${BASE_URL}/salas/${qrCodeId}/`);
+      console.log('FormData preparado, enviando requisição...');
+      
       const response = await fetch(`${BASE_URL}/salas/${qrCodeId}/`, {
         method: 'PUT',
         headers: {
@@ -318,6 +333,8 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
         },
         body: formData,
       });
+      
+      console.log('Resposta recebida:', response.status, response.statusText);
 
 
       if (response.ok) {
@@ -472,6 +489,8 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       
       if (data?.observacoes) {
         formData.append('observacoes', data.observacoes);
+      } else {
+        formData.append('observacoes', '');
       }
       
       const response = await fetch(`${BASE_URL}/salas/${qrCodeId}/concluir_limpeza/`, {
@@ -532,19 +551,28 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
     }
 
     try {
-      const requestBody: any = {};
-      if (data) {
-        if (data.observacoes) requestBody.observacoes = data.observacoes;
+      console.log('=== MARCAR COMO SUJA DEBUG ===');
+      console.log('qrCodeId:', qrCodeId);
+      console.log('data recebido:', data);
+      
+      const formData = new FormData();
+      if (data && data.observacoes) {
+        formData.append('observacoes', data.observacoes);
+        console.log('Adicionando observações ao FormData:', data.observacoes);
+      } else {
+        formData.append('observacoes', '');
+        console.log('Enviando FormData sem observações (campo vazio)');
       }
       
       const response = await fetch(`${BASE_URL}/salas/${qrCodeId}/marcar_como_suja/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
         },
-        body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined,
+        body: formData,
       });
+      
+      console.log('Resposta marcar como suja:', response.status, response.statusText);
 
       if (response.ok || response.status === 201) {
         setSalas(prev => prev.map(sala => 
@@ -553,6 +581,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
             status_limpeza: 'Suja'
           } : sala
         ));
+
+        console.log('Recarregando dados das salas após marcar como suja...');
+        await listSalas();
+        
         return { success: true };
       } else {
         try {
@@ -822,6 +854,7 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       };
     }
   };
+
 
   const value: SalasContextType = {
     salas,
