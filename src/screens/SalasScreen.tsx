@@ -17,7 +17,7 @@ import { useAuth, canManageSalas, isAdmin } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
 import { useQRCode } from '../contexts/QRCodeContext';
-import { Sala } from '../types/salas';
+import { Sala } from '../schemas';
 import SalaCard from '../components/SalaCard';
 import SalaForm from '../components/SalaForm';
 import MarcarSujaModal from '../components/MarcarSujaModal';
