@@ -1,3 +1,9 @@
+export interface DetalhesSuja {
+  data_hora: string;
+  reportado_por: string;
+  observacoes: string;
+}
+
 export interface Sala {
   id: number;
   qr_code_id: string;
@@ -13,6 +19,7 @@ export interface Sala {
   ultima_limpeza_funcionario: string | null;
   ativa: boolean;
   responsaveis?: string[];
+  detalhes_suja?: DetalhesSuja;
 }
 
 export interface CreateSalaData {
@@ -23,7 +30,7 @@ export interface CreateSalaData {
   descricao?: string;
   instrucoes?: string;
   responsaveis?: string[];
-  imagem?: any; // Para upload de arquivo
+  imagem?: any;
 }
 
 export interface UpdateSalaData {
@@ -35,7 +42,7 @@ export interface UpdateSalaData {
   instrucoes?: string;
   responsaveis?: string[];
   status_limpeza?: 'Limpa' | 'Suja' | 'Limpeza Pendente' | 'Em Limpeza';
-  imagem?: any; // Para upload de arquivo
+  imagem?: any; 
 }
 
 export interface LimpezaRegistro {

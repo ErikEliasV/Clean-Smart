@@ -17,6 +17,7 @@ import { Eye, EyeOff, Lock, User } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
 import CustomAlert from '../components/CustomAlert';
 import { useCustomAlert } from '../hooks/useCustomAlert';
+import { LoginDataSchema, validateData } from '../schemas';
 
 const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -50,10 +51,11 @@ const LoginScreen: React.FC = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
+    const validation = validateData(LoginDataSchema, { username, password });
+    if (!validation.success) {
       showAlert({
         title: 'Erro',
-        message: 'Por favor, preencha todos os campos.',
+        message: `Dados inválidos: ${validation.errors.join(', ')}`,
         type: 'error',
         confirmText: 'OK'
       });
@@ -97,9 +99,9 @@ const LoginScreen: React.FC = () => {
               <Image 
                 source={require('../../assets/images/logo_name.png')} 
                 style={{
-                  width: isKeyboardVisible ? 192 : 256, // w-48 = 192px, w-64 = 256px
-                  height: isKeyboardVisible ? 120 : 160, // h-30 = 120px, h-40 = 160px
-                  marginBottom: isKeyboardVisible ? 16 : 32, // mb-4 = 16px, mb-8 = 32px
+                  width: isKeyboardVisible ? 192 : 256, 
+                  height: isKeyboardVisible ? 120 : 160, 
+                  marginBottom: isKeyboardVisible ? 16 : 32, 
                   resizeMode: 'contain'
                 }}
               />

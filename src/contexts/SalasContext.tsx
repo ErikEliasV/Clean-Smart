@@ -1,6 +1,22 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { Sala, CreateSalaData, UpdateSalaData, LimpezaRegistro, MarcarLimpezaData, IniciarLimpezaResponse, ConcluirLimpezaData, MarcarSujaData, FotoLimpeza } from '../types/salas';
+import { 
+  Sala, 
+  CreateSalaData, 
+  UpdateSalaData, 
+  LimpezaRegistro, 
+  MarcarLimpezaData, 
+  IniciarLimpezaResponse, 
+  ConcluirLimpezaData, 
+  MarcarSujaData, 
+  FotoLimpeza,
+  CreateSalaDataSchema,
+  UpdateSalaDataSchema,
+  MarcarLimpezaDataSchema,
+  ConcluirLimpezaDataSchema,
+  MarcarSujaDataSchema,
+  validateData
+} from '../schemas';
 
 interface SalasContextType {
   salas: Sala[];
@@ -98,6 +114,14 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
   const createSala = async (salaData: CreateSalaData): Promise<{ success: boolean; sala?: Sala; error?: string }> => {
     if (!token) {
       return { success: false, error: 'Token não encontrado' };
+    }
+
+    const validation = validateData(CreateSalaDataSchema, salaData);
+    if (!validation.success) {
+      return { 
+        success: false, 
+        error: `Dados inválidos: ${validation.errors.join(', ')}` 
+      };
     }
 
     try {
@@ -258,6 +282,14 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
   const updateSala = async (qrCodeId: string, salaData: UpdateSalaData): Promise<{ success: boolean; sala?: Sala; error?: string }> => {
     if (!token) {
       return { success: false, error: 'Token não encontrado' };
+    }
+
+    const validation = validateData(UpdateSalaDataSchema, salaData);
+    if (!validation.success) {
+      return { 
+        success: false, 
+        error: `Dados inválidos: ${validation.errors.join(', ')}` 
+      };
     }
 
     try {
@@ -483,6 +515,16 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
+    if (data) {
+      const validation = validateData(ConcluirLimpezaDataSchema, data);
+      if (!validation.success) {
+        return { 
+          success: false, 
+          error: `Dados inválidos: ${validation.errors.join(', ')}` 
+        };
+      }
+    }
+
     try {
       
       const formData = new FormData();
@@ -550,6 +592,16 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
+    if (data) {
+      const validation = validateData(MarcarSujaDataSchema, data);
+      if (!validation.success) {
+        return { 
+          success: false, 
+          error: `Dados inválidos: ${validation.errors.join(', ')}` 
+        };
+      }
+    }
+
     try {
       console.log('=== MARCAR COMO SUJA DEBUG ===');
       console.log('qrCodeId:', qrCodeId);
@@ -613,6 +665,16 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
   const marcarComoLimpa = async (qrCodeId: string, data?: MarcarLimpezaData): Promise<{ success: boolean; registro?: LimpezaRegistro; error?: string }> => {
     if (!token) {
       return { success: false, error: 'Token não encontrado' };
+    }
+
+    if (data) {
+      const validation = validateData(MarcarLimpezaDataSchema, data);
+      if (!validation.success) {
+        return { 
+          success: false, 
+          error: `Dados inválidos: ${validation.errors.join(', ')}` 
+        };
+      }
     }
 
     try {

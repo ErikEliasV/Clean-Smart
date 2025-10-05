@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { X, Save, Camera, Image as ImageIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Sala, CreateSalaData, UpdateSalaData } from '../types/salas';
+import { Sala, CreateSalaData, UpdateSalaData, CreateSalaDataSchema, UpdateSalaDataSchema, validateData } from '../schemas';
 import { useAuth, canManageSalas, isZelador } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { SENAC_COLORS } from '../constants/colors';
@@ -100,28 +100,40 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.nome_numero.trim()) {
-      Alert.alert('Erro', 'Nome/Número da sala é obrigatório');
-      return false;
+    if (isEditing) {
+      const updateData = {
+        nome_numero: formData.nome_numero.trim() || undefined,
+        capacidade: formData.capacidade ? parseInt(formData.capacidade) : undefined,
+        validade_limpeza_horas: formData.validade_limpeza_horas ? parseInt(formData.validade_limpeza_horas) : undefined,
+        localizacao: formData.localizacao.trim() || undefined,
+        descricao: formData.descricao.trim() || undefined,
+        instrucoes: formData.instrucoes.trim() || undefined,
+        responsaveis: selectedResponsaveis.length > 0 ? selectedResponsaveis : undefined,
+      };
+
+      const validation = validateData(UpdateSalaDataSchema, updateData);
+      if (!validation.success) {
+        Alert.alert('Erro', `Dados inválidos: ${validation.errors.join(', ')}`);
+        return false;
+      }
+    } else {
+      const createData = {
+        nome_numero: formData.nome_numero.trim(),
+        capacidade: parseInt(formData.capacidade),
+        validade_limpeza_horas: parseInt(formData.validade_limpeza_horas),
+        localizacao: formData.localizacao.trim(),
+        descricao: formData.descricao.trim() || undefined,
+        instrucoes: formData.instrucoes.trim() || undefined,
+        responsaveis: selectedResponsaveis.length > 0 ? selectedResponsaveis : undefined,
+      };
+
+      const validation = validateData(CreateSalaDataSchema, createData);
+      if (!validation.success) {
+        Alert.alert('Erro', `Dados inválidos: ${validation.errors.join(', ')}`);
+        return false;
+      }
     }
-    if (!formData.capacidade.trim()) {
-      Alert.alert('Erro', 'Capacidade é obrigatória');
-      return false;
-    }
-    const capacidadeNum = parseInt(formData.capacidade);
-    if (isNaN(capacidadeNum) || capacidadeNum <= 0) {
-      Alert.alert('Erro', 'Capacidade deve ser um número maior que zero');
-      return false;
-    }
-    const validadeNum = parseInt(formData.validade_limpeza_horas);
-    if (isNaN(validadeNum) || validadeNum <= 0) {
-      Alert.alert('Erro', 'Validade da limpeza deve ser um número maior que zero');
-      return false;
-    }
-    if (!formData.localizacao.trim()) {
-      Alert.alert('Erro', 'Localização é obrigatória');
-      return false;
-    }
+    
     return true;
   };
 
@@ -148,7 +160,7 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.3, // Reduzido de 0.8 para 0.3 para menor tamanho
+        quality: 0.3, 
         base64: false,
       });
 
@@ -179,7 +191,7 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.3, // Reduzido de 0.8 para 0.3 para menor tamanho
+        quality: 0.3,
         base64: false,
       });
 

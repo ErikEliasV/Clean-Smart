@@ -16,6 +16,8 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
 import type { ProfileStackParamList } from '../types/navigation';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 import { 
   Users, 
   UserPlus, 
@@ -47,6 +49,7 @@ const UserManagementScreen: React.FC = () => {
   const navigation = useNavigation<UserManagementScreenNavigationProp>();
   const { user: currentUser, listUsers, createUser, isDarkMode } = useAuth();
   const { groups, carregarGrupos, getGroupName } = useGroups();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -85,18 +88,33 @@ const UserManagementScreen: React.FC = () => {
     if (result.success && result.users) {
       setUsers(result.users);
     } else {
-      Alert.alert('Erro', result.error || 'Erro ao carregar usuários');
+      showAlert({
+        title: 'Erro',
+        message: result.error || 'Erro ao carregar usuários',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
   const handleCreateUser = async () => {
     if (!newUsername.trim() || !newPassword.trim()) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+      showAlert({
+        title: 'Erro',
+        message: 'Preencha todos os campos obrigatórios',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem');
+      showAlert({
+        title: 'Erro',
+        message: 'As senhas não coincidem',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
@@ -118,12 +136,24 @@ const UserManagementScreen: React.FC = () => {
     setIsLoading(false);
 
     if (result.success) {
-      Alert.alert('Sucesso', 'Usuário criado com sucesso!');
-      setShowCreateModal(false);
-      resetForm();
-      loadUsers();
+      showAlert({
+        title: 'Sucesso',
+        message: 'Usuário criado com sucesso!',
+        type: 'success',
+        confirmText: 'OK',
+        onConfirm: () => {
+          setShowCreateModal(false);
+          resetForm();
+          loadUsers();
+        }
+      });
     } else {
-      Alert.alert('Erro', result.error || 'Erro ao criar usuário');
+      showAlert({
+        title: 'Erro',
+        message: result.error || 'Erro ao criar usuário',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
@@ -630,6 +660,18 @@ const UserManagementScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </SafeAreaView>
   );
 };
