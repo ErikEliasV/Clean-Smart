@@ -135,6 +135,12 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
       if (sala && sala.status_limpeza === 'Suja') {
         console.log('Usando dados da sala:', JSON.stringify(sala, null, 2));
         
+        if (sala.detalhes_suja && sala.detalhes_suja.observacoes) {
+          console.log('Encontrado observação em detalhes_suja.observacoes:', sala.detalhes_suja.observacoes);
+          setObservacoesSalaSuja(sala.detalhes_suja.observacoes);
+          return;
+        }
+
         const campos = [
           'observacoes_suja',
           'ultima_observacao_suja', 

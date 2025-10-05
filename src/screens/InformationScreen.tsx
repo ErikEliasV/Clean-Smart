@@ -232,10 +232,12 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
     limpas: salas.filter(s => s.status_limpeza === 'Limpa').length,
     pendentes: salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length,
     sujas: salas.filter(s => s.status_limpeza === 'Suja').length,
+    emLimpeza: salas.filter(s => s.status_limpeza === 'Em Limpeza').length,
     inativas: salas.filter(s => !s.ativa).length,
     percentualLimpas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpa').length / salas.length) * 100) : 0,
     percentualSujas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Suja').length / salas.length) * 100) : 0,
-    percentualPendentes: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length / salas.length) * 100) : 0
+    percentualPendentes: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length / salas.length) * 100) : 0,
+    percentualEmLimpeza: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Em Limpeza').length / salas.length) * 100) : 0
   };
 
   return (
@@ -441,6 +443,30 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
                   </Text>
                 </View>
 
+                {/* Card EM LIMPEZA */}
+                <View className={`p-4 rounded-2xl ${
+                  isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+                } border border-gray-200/20`}>
+                  <View className="flex-row items-center justify-between mb-3">
+                    <View className={`w-12 h-12 rounded-full items-center justify-center`} 
+                         style={{ backgroundColor: '#3B82F620' }}>
+                      <Activity size={24} color="#3B82F6" />
+                    </View>
+                    <Text className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      EM LIMPEZA
+                    </Text>
+                  </View>
+                  <Text className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
+                    {salasStats.emLimpeza}
+                  </Text>
+                  <Text className={`text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                    Salas em Limpeza
+                  </Text>
+                  <Text className={`text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {salasStats.percentualEmLimpeza}%
+                  </Text>
+                </View>
+
                 {/* Card INATIVAS */}
                 <View className={`p-4 rounded-2xl ${
                   isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
@@ -491,7 +517,8 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
                   data={salasStats.total > 0 ? [
                     { label: 'Limpas', value: salasStats.limpas, color: '#10B981', max: salasStats.total },
                     { label: 'Pendentes', value: salasStats.pendentes, color: '#F59E0B', max: salasStats.total },
-                    { label: 'Sujas', value: salasStats.sujas, color: '#EF4444', max: salasStats.total }
+                    { label: 'Sujas', value: salasStats.sujas, color: '#EF4444', max: salasStats.total },
+                    { label: 'Em Limpeza', value: salasStats.emLimpeza, color: '#3B82F6', max: salasStats.total }
                   ] : []}
                   isDarkMode={isDarkMode}
                 />
@@ -511,7 +538,8 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
                   data={salasStats.total > 0 ? [
                     { label: 'Limpas', value: salasStats.limpas, color: '#10B981' },
                     { label: 'Pendentes', value: salasStats.pendentes, color: '#F59E0B' },
-                    { label: 'Sujas', value: salasStats.sujas, color: '#EF4444' }
+                    { label: 'Sujas', value: salasStats.sujas, color: '#EF4444' },
+                    { label: 'Em Limpeza', value: salasStats.emLimpeza, color: '#3B82F6' }
                   ] : []}
                   isDarkMode={isDarkMode}
                 />
