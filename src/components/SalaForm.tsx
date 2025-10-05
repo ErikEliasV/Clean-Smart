@@ -101,7 +101,6 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
 
   const validateForm = (): boolean => {
     if (isEditing) {
-      // Para edição, validar apenas campos obrigatórios se preenchidos
       const updateData = {
         nome_numero: formData.nome_numero.trim() || undefined,
         capacidade: formData.capacidade ? parseInt(formData.capacidade) : undefined,
@@ -118,7 +117,6 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
         return false;
       }
     } else {
-      // Para criação, validar todos os campos obrigatórios
       const createData = {
         nome_numero: formData.nome_numero.trim(),
         capacidade: parseInt(formData.capacidade),
@@ -162,7 +160,7 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.3, // Reduzido de 0.8 para 0.3 para menor tamanho
+        quality: 0.3, 
         base64: false,
       });
 
@@ -193,7 +191,7 @@ const SalaForm: React.FC<SalaFormProps> = ({ visible, onClose, sala }) => {
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.3, // Reduzido de 0.8 para 0.3 para menor tamanho
+        quality: 0.3,
         base64: false,
       });
 

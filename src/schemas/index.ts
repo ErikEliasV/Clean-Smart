@@ -42,7 +42,6 @@ export const ProfileDataSchema = z.object({
   profile_picture: z.string().nullable(),
 });
 
-// Schema para detalhes de sala suja
 export const DetalhesSujaSchema = z.object({
   data_hora: z.string(),
   reportado_por: z.string(),

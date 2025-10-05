@@ -116,7 +116,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
-    // Validar dados com Zod
     const validation = validateData(CreateSalaDataSchema, salaData);
     if (!validation.success) {
       return { 
@@ -285,7 +284,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
-    // Validar dados com Zod
     const validation = validateData(UpdateSalaDataSchema, salaData);
     if (!validation.success) {
       return { 
@@ -517,7 +515,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
-    // Validar dados com Zod se fornecidos
     if (data) {
       const validation = validateData(ConcluirLimpezaDataSchema, data);
       if (!validation.success) {
@@ -595,7 +592,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
-    // Validar dados com Zod se fornecidos
     if (data) {
       const validation = validateData(MarcarSujaDataSchema, data);
       if (!validation.success) {
@@ -671,7 +667,6 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
-    // Validar dados com Zod se fornecidos
     if (data) {
       const validation = validateData(MarcarLimpezaDataSchema, data);
       if (!validation.success) {
