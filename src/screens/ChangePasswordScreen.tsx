@@ -16,12 +16,15 @@ import { useAuth } from '../contexts/AuthContext';
 import type { ProfileStackParamList } from '../types/navigation';
 import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
+import CustomAlert from '../components/CustomAlert';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 type ChangePasswordScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
 const ChangePasswordScreen: React.FC = () => {
   const navigation = useNavigation<ChangePasswordScreenNavigationProp>();
   const { changePassword, isDarkMode } = useAuth();
+  const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -32,17 +35,32 @@ const ChangePasswordScreen: React.FC = () => {
 
   const handleChangePassword = async () => {
     if (!oldPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      showAlert({
+        title: 'Erro',
+        message: 'Por favor, preencha todos os campos.',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      Alert.alert('Erro', 'As novas senhas não coincidem.');
+      showAlert({
+        title: 'Erro',
+        message: 'As novas senhas não coincidem.',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('Erro', 'A nova senha deve ter pelo menos 6 caracteres.');
+      showAlert({
+        title: 'Erro',
+        message: 'A nova senha deve ter pelo menos 6 caracteres.',
+        type: 'error',
+        confirmText: 'OK'
+      });
       return;
     }
 
@@ -55,23 +73,25 @@ const ChangePasswordScreen: React.FC = () => {
     setIsLoading(false);
 
     if (result.success) {
-      Alert.alert(
-        'Sucesso',
-        'Senha alterada com sucesso!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setOldPassword('');
-              setNewPassword('');
-              setConfirmNewPassword('');
-              navigation.goBack();
-            },
-          },
-        ]
-      );
+      showAlert({
+        title: 'Sucesso',
+        message: 'Senha alterada com sucesso!',
+        type: 'success',
+        confirmText: 'OK',
+        onConfirm: () => {
+          setOldPassword('');
+          setNewPassword('');
+          setConfirmNewPassword('');
+          navigation.goBack();
+        }
+      });
     } else {
-      Alert.alert('Erro', result.error || 'Erro ao alterar senha');
+      showAlert({
+        title: 'Erro',
+        message: result.error || 'Erro ao alterar senha',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
@@ -227,6 +247,18 @@ const ChangePasswordScreen: React.FC = () => {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertOptions.title}
+        message={alertOptions.message}
+        type={alertOptions.type}
+        confirmText={alertOptions.confirmText}
+        cancelText={alertOptions.cancelText}
+        onConfirm={alertOptions.onConfirm}
+        onCancel={alertOptions.onCancel}
+        showCancel={alertOptions.showCancel}
+      />
     </SafeAreaView>
   );
 };

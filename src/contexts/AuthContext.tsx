@@ -1,16 +1,20 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { 
+  User, 
+  CreateUserData, 
+  ChangePasswordData, 
+  Group, 
+  ProfileData,
+  LoginData,
+  UserSchema,
+  CreateUserDataSchema,
+  ChangePasswordDataSchema,
+  LoginDataSchema,
+  validateData
+} from '../schemas';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  is_superuser: boolean;
-  groups: number[];
-  profile: {
-    profile_picture: string | null;
-  };
-}
+
 
 export const isAdmin = (user: User | null): boolean => {
   return user?.is_superuser === true;
@@ -44,29 +48,6 @@ export const canViewLimpezaHistory = (user: User | null): boolean => {
   return isAdmin(user);
 };
 
-interface CreateUserData {
-  username: string;
-  password: string;
-  confirm_password: string;
-  email?: string;
-  is_superuser?: boolean;
-  groups?: number[];
-}
-
-interface ChangePasswordData {
-  old_password: string;
-  new_password: string;
-  confirm_new_password: string;
-}
-
-interface Group {
-  id: number;
-  name: string;
-}
-
-interface ProfileData {
-  profile_picture: string | null;
-}
 
 interface AuthContextType {
   user: User | null;
@@ -155,6 +136,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const validation = validateData(LoginDataSchema, { username, password });
+    if (!validation.success) {
+      return { 
+        success: false, 
+        error: `Dados inválidos: ${validation.errors.join(', ')}` 
+      };
+    }
+
     try {
       const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/login/', {
         method: 'POST',
@@ -286,6 +275,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { success: false, error: 'Token não encontrado' };
     }
 
+    const validation = validateData(CreateUserDataSchema, userData);
+    if (!validation.success) {
+      return { 
+        success: false, 
+        error: `Dados inválidos: ${validation.errors.join(', ')}` 
+      };
+    }
+
     try {
       const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/create_user/', {
         method: 'POST',
@@ -318,6 +315,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const changePassword = async (passwordData: ChangePasswordData): Promise<{ success: boolean; error?: string }> => {
     if (!token) {
       return { success: false, error: 'Token não encontrado' };
+    }
+
+    const validation = validateData(ChangePasswordDataSchema, passwordData);
+    if (!validation.success) {
+      return { 
+        success: false, 
+        error: `Dados inválidos: ${validation.errors.join(', ')}` 
+      };
     }
 
     try {
