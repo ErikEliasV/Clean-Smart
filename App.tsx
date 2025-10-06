@@ -7,6 +7,7 @@ import { QRCodeProvider } from './src/contexts/QRCodeContext';
 import { BottomTabsProvider } from './src/contexts/BottomTabsContext';
 import { NotificationsProvider } from './src/contexts/NotificationsContext';
 import { GroupsProvider } from './src/contexts/GroupsContext';
+import { LimpezaProvider } from './src/contexts/LimpezaContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import './global.css';
 
@@ -15,21 +16,23 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <SalasProvider>
-          <QRCodeProvider>
-            <BottomTabsProvider>
-              <NotificationsProvider>
-                <GroupsProvider>
-                  <StatusBar 
-                    style="light" 
-                    backgroundColor="transparent" 
-                    translucent={true}
-                    hidden={false}
-                  />
-                  <AppNavigator />
-                </GroupsProvider>
-              </NotificationsProvider>
-            </BottomTabsProvider>
-          </QRCodeProvider>
+          <LimpezaProvider>
+            <QRCodeProvider>
+              <BottomTabsProvider>
+                <NotificationsProvider>
+                  <GroupsProvider>
+                    <StatusBar 
+                      style="light" 
+                      backgroundColor="transparent" 
+                      translucent={true}
+                      hidden={false}
+                    />
+                    <AppNavigator />
+                  </GroupsProvider>
+                </NotificationsProvider>
+              </BottomTabsProvider>
+            </QRCodeProvider>
+          </LimpezaProvider>
         </SalasProvider>
       </AuthProvider>
     </SafeAreaProvider>

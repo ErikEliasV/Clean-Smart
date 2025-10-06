@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { useTokenError } from '../hooks/useTokenError';
 import { 
   Sala, 
   CreateSalaData, 
@@ -57,6 +58,7 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { token } = useAuth();
+  const { checkTokenError } = useTokenError();
 
   const listSalas = async (): Promise<{ success: boolean; salas?: Sala[]; error?: string }> => {
     if (!token) {
@@ -72,6 +74,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
         },
       });
+
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
 
       if (response.ok) {
         try {
@@ -162,6 +168,9 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
         body: formData,
       });
 
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirou. Faça login novamente.' };
+      }
       
       if (response.ok) {
         try {
@@ -243,6 +252,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
         },
       });
+
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
 
       if (response.ok) {
         try {
@@ -426,6 +439,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
         },
       });
 
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
+
       if (response.ok) {
         setSalas(prev => prev.filter(sala => sala.qr_code_id !== qrCodeId));
         return { success: true };
@@ -467,7 +484,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
         },
       });
-      
+
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
 
       if (response.ok || response.status === 201) {
         try {
@@ -542,7 +562,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
         },
         body: formData,
       });
-      
+
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
 
       if (response.ok) {
         try {
@@ -624,7 +647,10 @@ export const SalasProvider: React.FC<SalasProviderProps> = ({ children }) => {
         body: formData,
       });
       
-      console.log('Resposta marcar como suja:', response.status, response.statusText);
+
+      if (await checkTokenError(response)) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
 
       if (response.ok || response.status === 201) {
         setSalas(prev => prev.map(sala => 
