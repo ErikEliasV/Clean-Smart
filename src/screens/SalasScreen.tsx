@@ -17,6 +17,7 @@ import { useAuth, canManageSalas, isAdmin } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
 import { useQRCode } from '../contexts/QRCodeContext';
+import { useLimpeza } from '../contexts/LimpezaContext';
 import { Sala } from '../schemas';
 import SalaCard from '../components/SalaCard';
 import SalaForm from '../components/SalaForm';
@@ -36,6 +37,7 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   const { groups, getGroupName } = useGroups();
   const { salas, isLoading, listSalas, getSala, marcarComoSuja } = useSalas();
   const { qrCodeData, clearQRCodeData } = useQRCode();
+  const { limpezaEmAndamento, dadosLimpeza } = useLimpeza();
   const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [showForm, setShowForm] = useState(false);
   const [editingSala, setEditingSala] = useState<Sala | undefined>(undefined);
@@ -77,6 +79,17 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   useEffect(() => {
     loadSalas();
   }, []);
+
+  useEffect(() => {
+    if (limpezaEmAndamento && dadosLimpeza) {
+      console.log('🚨 Limpeza em andamento detectada no SalasScreen! Redirecionando...');
+      navigation.navigate('LimpezaProcesso', {
+        salaId: dadosLimpeza.salaId,
+        salaNome: dadosLimpeza.salaNome,
+        qrCodeScanned: false,
+      });
+    }
+  }, [limpezaEmAndamento, dadosLimpeza, navigation]);
 
   useEffect(() => {
     if (qrCodeData) {
