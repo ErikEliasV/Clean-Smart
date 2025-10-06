@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
 import { useBottomTabs } from '../contexts/BottomTabsContext';
+import { useLimpeza } from '../contexts/LimpezaContext';
 import { SENAC_COLORS } from '../constants/colors';
 import CustomAlert from '../components/CustomAlert';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -32,6 +33,7 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
   const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const { iniciarLimpeza, concluirLimpeza, uploadFotoLimpeza, getSala, marcarComoSuja, listRegistrosLimpeza } = useSalas();
   const { setHideBottomTabs } = useBottomTabs();
+  const { iniciarProcessoLimpeza, finalizarProcessoLimpeza, limpezaEmAndamento, dadosLimpeza } = useLimpeza();
   const [observacoes, setObservacoes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [limpezaIniciada, setLimpezaIniciada] = useState(false);
@@ -64,6 +66,15 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
       return groupName === 'Solicitante de Serviços';
     });
   };
+
+  useEffect(() => {
+    if (limpezaEmAndamento && dadosLimpeza) {
+      console.log('🔄 Restaurando estado da limpeza em andamento:', dadosLimpeza);
+      setLimpezaIniciada(true);
+      setInicioLimpeza(new Date(dadosLimpeza.inicioLimpeza));
+      setRegistroLimpezaId(dadosLimpeza.registroLimpezaId);
+    }
+  }, [limpezaEmAndamento, dadosLimpeza]);
 
   useEffect(() => {
     setHideBottomTabs(limpezaIniciada);
@@ -352,12 +363,15 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
       const result = await iniciarLimpeza(salaId);
       
       if (result.success && result.registro) {
-    setLimpezaIniciada(true);
-    setInicioLimpeza(new Date());
+        setLimpezaIniciada(true);
+        setInicioLimpeza(new Date());
         setRegistroLimpezaId(result.registro.id);
+
+        await iniciarProcessoLimpeza(salaId, salaNome || 'Sala', result.registro.id);
+        
         showAlert({
           title: 'Limpeza Iniciada',
-          message: 'A limpeza foi iniciada. Quando terminar, clique em "Finalizar Limpeza" para concluir o processo.',
+          message: 'A limpeza foi iniciada. Você não poderá navegar para outras telas até finalizar a limpeza.',
           type: 'success',
           confirmText: 'OK'
         });
@@ -418,6 +432,8 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
       const result = await concluirLimpeza(salaId, data);
       
       if (result.success) {
+        await finalizarProcessoLimpeza();
+        
         setLimpezaIniciada(false);
         setInicioLimpeza(null);
         setRegistroLimpezaId(null);
@@ -426,7 +442,7 @@ const LimpezaProcessoScreen: React.FC<LimpezaProcessoScreenProps> = ({ navigatio
         
         showAlert({
           title: 'Sucesso',
-          message: 'Limpeza finalizada com sucesso!',
+          message: 'Limpeza finalizada com sucesso! Você já pode navegar livremente no aplicativo.',
           type: 'success',
           confirmText: 'OK',
           onConfirm: () => navigation.goBack()

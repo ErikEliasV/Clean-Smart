@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Modal, Alert, TouchableOpacity, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { useQRCode } from '../contexts/QRCodeContext';
 import { useBottomTabs } from '../contexts/BottomTabsContext';
 import { useNotifications } from '../contexts/NotificationsContext';
 import { useGroups } from '../contexts/GroupsContext';
+import { useLimpeza } from '../contexts/LimpezaContext';
 import { useResponsive } from '../hooks/useResponsive';
 import Sidebar from '../components/Sidebar';
 
@@ -83,6 +84,7 @@ const TabNavigator: React.FC<TabNavigatorProps> = () => {
   const { hideBottomTabs } = useBottomTabs();
   const { notificacoesNaoLidas, carregarNotificacoes } = useNotifications();
   const { carregarGrupos } = useGroups();
+  const { limpezaEmAndamento, dadosLimpeza } = useLimpeza();
   const insets = useSafeAreaInsets();
   const { shouldUseSidebar } = useResponsive();
   const [activeTab, setActiveTab] = useState('Home');
@@ -95,7 +97,23 @@ const TabNavigator: React.FC<TabNavigatorProps> = () => {
     carregarGrupos();
   }, [carregarNotificacoes, carregarGrupos]);
 
+  React.useEffect(() => {
+    if (limpezaEmAndamento && dadosLimpeza && activeTab !== 'Salas') {
+      console.log('🚨 Limpeza em andamento detectada! Redirecionando para tela de limpeza...');
+      setActiveTab('Salas');
+    }
+  }, [limpezaEmAndamento, dadosLimpeza, activeTab]);
+
   const handleTabPress = (tabName: string) => {
+    if (limpezaEmAndamento && tabName !== 'Salas') {
+      Alert.alert(
+        'Limpeza em Andamento',
+        `Você está realizando a limpeza da sala "${dadosLimpeza?.salaNome}". Finalize a limpeza antes de navegar para outras telas.`,
+        [{ text: 'OK', onPress: () => setActiveTab('Salas') }]
+      );
+      return;
+    }
+
     if (tabName === 'QRScanner') {
       handleOpenScanner();
     } else {
@@ -153,7 +171,7 @@ const TabNavigator: React.FC<TabNavigatorProps> = () => {
       case 'Settings':
         return <SettingsStack />;
       case 'QRScanner':
-        return <InformationScreen />; // Fallback para quando não está escaneando
+        return <InformationScreen />;
       default:
         return <InformationScreen />;
     }

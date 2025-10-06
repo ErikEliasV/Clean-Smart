@@ -67,6 +67,7 @@ interface AuthContextType {
   getProfile: () => Promise<{ success: boolean; profile?: ProfileData; error?: string }>;
   updateProfile: (imageUri: string | null) => Promise<{ success: boolean; profile?: ProfileData; error?: string }>;
   isAdmin: () => boolean;
+  handleTokenError: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -203,12 +204,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/current_user/', {
+      const response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/current_user/', {
         method: 'GET',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (response.ok) {
@@ -243,12 +240,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/list_users/', {
+      const response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/list_users/', {
         method: 'GET',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (response.ok) {
@@ -284,12 +277,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/create_user/', {
+      const response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/create_user/', {
         method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(userData),
       });
 
@@ -326,12 +315,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/change_password/', {
+      const response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/change_password/', {
         method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(passwordData),
       });
 
@@ -359,12 +344,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/list_groups/', {
+      const response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/list_groups/', {
         method: 'GET',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (response.ok) {
@@ -392,12 +373,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('https://zeladoria.tsr.net.br/api/accounts/profile/', {
+      const response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/profile/', {
         method: 'GET',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (response.ok) {
@@ -440,18 +417,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           name: 'profile_picture.jpg',
         } as any);
 
-        response = await fetch('https://zeladoria.tsr.net.br/api/accounts/profile/', {
+        response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/profile/', {
           method: 'PUT',
           headers: {
-            'Authorization': `Token ${token}`,
+            'Content-Type': 'multipart/form-data',
           },
           body: formData,
         });
       } else {
-        response = await fetch('https://zeladoria.tsr.net.br/api/accounts/profile/', {
+        response = await makeAuthenticatedRequest('https://zeladoria.tsr.net.br/api/accounts/profile/', {
           method: 'PUT',
           headers: {
-            'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ profile_picture: null }),
@@ -499,6 +475,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return user.groups.map(groupId => `Grupo ${groupId}`);
   };
 
+  const handleTokenError = async (): Promise<void> => {
+    console.log('🔐 Token expirado ou inválido. Fazendo logout automático...');
+    await logout();
+  };
+
+  const isTokenError = (response: Response): boolean => {
+    return response.status === 401 || response.status === 403;
+  };
+
+  const makeAuthenticatedRequest = async (
+    url: string, 
+    options: RequestInit = {}
+  ): Promise<Response> => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Token ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (isTokenError(response)) {
+      await handleTokenError();
+    }
+
+    return response;
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -517,6 +522,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAdmin,
     isUserInGroup,
     getUserGroupNames,
+    handleTokenError,
   };
 
   return (
