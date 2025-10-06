@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { Sala } from '../types/salas';
+import { Sala } from '../schemas';
 
 interface MarcarSujaModalProps {
   visible: boolean;

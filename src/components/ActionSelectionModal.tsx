@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { Brush, AlertTriangle, Settings } from 'lucide-react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { Sala } from '../types/salas';
+import { Sala } from '../schemas';
 
 interface ActionSelectionModalProps {
   visible: boolean;
