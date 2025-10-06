@@ -16,7 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, Filter, Calendar, User, MapPin, Clock, Camera } from 'lucide-react-native';
 import { useAuth, canViewAllSalas } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
-import { LimpezaRegistro, Sala } from '../types/salas';
+import { LimpezaRegistro, Sala } from '../schemas';
 import { SENAC_COLORS } from '../constants/colors';
 import { StackScreenProps } from '@react-navigation/stack';
 import { SalasStackParamList } from '../types/navigation';

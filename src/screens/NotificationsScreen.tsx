@@ -206,9 +206,9 @@ const NotificationsScreen: React.FC = () => {
 
   return (
     <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`} edges={['top', 'left', 'right']}>
-      <View className={`px-6 py-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <View className={`px-4 py-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center">
+          <View className="flex-row items-center flex-1">
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               className="p-2 -ml-2 mr-2"
@@ -219,9 +219,9 @@ const NotificationsScreen: React.FC = () => {
               />
             </TouchableOpacity>
             
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-1">
               <Bell size={24} color={SENAC_COLORS.primary} />
-              <Text className={`text-2xl font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <Text className={`text-xl font-bold ml-3 flex-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Notificações
               </Text>
               {notificacoesNaoLidas > 0 && (
@@ -237,11 +237,11 @@ const NotificationsScreen: React.FC = () => {
           {notificacoesNaoLidas > 0 && (
             <TouchableOpacity
               onPress={handleMarkAllAsRead}
-              className="flex-row items-center px-3 py-2 rounded-lg"
+              className="flex-row items-center px-2 py-2 rounded-lg ml-2"
               style={{ backgroundColor: SENAC_COLORS.primary }}
             >
-              <CheckCheck size={16} color="white" />
-              <Text className="text-white text-sm font-medium ml-1">
+              <CheckCheck size={14} color="white" />
+              <Text className="text-white text-xs font-medium ml-1">
                 Marcar todas
               </Text>
             </TouchableOpacity>

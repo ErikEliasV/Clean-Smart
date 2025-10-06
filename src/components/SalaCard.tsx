@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MapPin, Users, CheckCircle, Clock, Trash2, Edit, BrushCleaning, FileInput } from 'lucide-react-native';
-import { Sala } from '../types/salas';
+import { Sala } from '../schemas';
 import { useAuth, canViewLimpezaHistory } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
 import { useSalas } from '../contexts/SalasContext';
