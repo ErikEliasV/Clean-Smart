@@ -1,12 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, { Circle, Path, G } from 'react-native-svg';
 import { useAuth, isAdmin, isZelador, isCorpoDocente } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
+import { useLimpeza } from '../contexts/LimpezaContext';
+import { useGroups } from '../contexts/GroupsContext';
 import CustomAlert from '../components/CustomAlert';
 import { useCustomAlert } from '../hooks/useCustomAlert';
+import { SalasStackParamList } from '../types/navigation';
 import { 
   User, 
   Lock, 
@@ -29,27 +33,91 @@ import {
   Target,
   Lightbulb,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  History,
+  PlayCircle,
+  Award
 } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
 
+type SalasNavigationProp = StackNavigationProp<SalasStackParamList>;
+
 const InformationScreen: React.FC = () => {
   const navigation = useNavigation();
+  const salasNavigation = useNavigation<SalasNavigationProp>();
   const { user, logout, isDarkMode, toggleTheme } = useAuth();
-  const { salas, listSalas, isLoading } = useSalas();
+  const { salas, listSalas, isLoading, listRegistrosLimpeza } = useSalas();
+  const { groups } = useGroups();
+  const { limpezaEmAndamento, dadosLimpeza } = useLimpeza();
   const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
+  const [salasLimpasPorZelador, setSalasLimpasPorZelador] = useState(0);
+  const [isLoadingRegistros, setIsLoadingRegistros] = useState(false);
 
   useEffect(() => {
     loadSalasData();
   }, []);
 
+  useEffect(() => {
+    if (isZelador(user, groups)) {
+      loadZeladorStats();
+    }
+  }, [user, groups]);
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('📱 InformationScreen ganhou foco - Recarregando dados...');
+      loadSalasData();
+      if (isZelador(user, groups)) {
+        loadZeladorStats();
+      }
+    }, [user, groups])
+  );
+
   const loadSalasData = async () => {
     await listSalas();
   };
 
+  const loadZeladorStats = async () => {
+    setIsLoadingRegistros(true);
+    try {
+      const result = await listRegistrosLimpeza();
+      if (result.success && result.registros) {
+        const registrosConcluidos = result.registros.filter(
+          (registro: any) => registro.data_hora_fim || registro.data_hora_limpeza
+        );
+        setSalasLimpasPorZelador(registrosConcluidos.length);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas do zelador:', error);
+    } finally {
+      setIsLoadingRegistros(false);
+    }
+  };
+
   const navigateToProfile = () => {
-    // @ts-ignore - Profile é uma tela válida no tab navigator
+    // @ts-ignore 
     navigation.navigate('Profile');
+  };
+
+  const navigateToHistoricoLimpeza = () => {
+    // @ts-ignore
+    navigation.navigate('Salas', { 
+      screen: 'RegistrosLimpeza'
+    });
+  };
+
+  const navigateToLimpezaEmAndamento = () => {
+    if (dadosLimpeza) {
+      // @ts-ignore 
+      navigation.navigate('Salas', {
+        screen: 'LimpezaProcesso',
+        params: {
+          salaId: dadosLimpeza.salaId,
+          salaNome: dadosLimpeza.salaNome,
+          qrCodeScanned: false
+        }
+      });
+    }
   };
 
   const getUserRoles = () => {
@@ -127,8 +195,8 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
   const total = data.reduce((sum, item) => sum + item.value, 0);
   
   const createPieChart = () => {
-    const size = 180; // Aumentado de 160 para 180
-    const radius = 75; // Aumentado de 65 para 75
+    const size = 180; 
+    const radius = 75; 
     const centerX = size / 2;
     const centerY = size / 2;
     
@@ -176,14 +244,14 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
   
   return (
     <View className="p-4">
-      {/* Gráfico de Pizza - Em Cima */}
+      {/* Gráfico de Pizza */}
       <View className="items-center mb-4">
         <Svg width={180} height={180}>
           {createPieChart()}
         </Svg>
       </View>
       
-      {/* Legenda - Em Baixo */}
+      {/* Legenda */}
       <View className="space-y-3">
         {data.map((item, index) => {
           const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
@@ -226,18 +294,21 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
     });
   };
 
+  const salasAtivas = salas.filter(s => s.ativa !== false);
+  const salasInativas = salas.filter(s => !s.ativa);
 
   const salasStats = {
-    total: salas.length,
-    limpas: salas.filter(s => s.status_limpeza === 'Limpa').length,
-    pendentes: salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length,
-    sujas: salas.filter(s => s.status_limpeza === 'Suja').length,
-    emLimpeza: salas.filter(s => s.status_limpeza === 'Em Limpeza').length,
-    inativas: salas.filter(s => !s.ativa).length,
-    percentualLimpas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpa').length / salas.length) * 100) : 0,
-    percentualSujas: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Suja').length / salas.length) * 100) : 0,
-    percentualPendentes: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Limpeza Pendente').length / salas.length) * 100) : 0,
-    percentualEmLimpeza: salas.length > 0 ? Math.round((salas.filter(s => s.status_limpeza === 'Em Limpeza').length / salas.length) * 100) : 0
+    total: salasAtivas.length,
+    limpas: salasAtivas.filter(s => s.status_limpeza === 'Limpa').length,
+    pendentes: salasAtivas.filter(s => s.status_limpeza === 'Limpeza Pendente').length,
+    sujas: salasAtivas.filter(s => s.status_limpeza === 'Suja').length,
+    emLimpeza: salasAtivas.filter(s => s.status_limpeza === 'Em Limpeza').length,
+    inativas: salasInativas.length,
+    totalGeral: salas.length,
+    percentualLimpas: salasAtivas.length > 0 ? Math.round((salasAtivas.filter(s => s.status_limpeza === 'Limpa').length / salasAtivas.length) * 100) : 0,
+    percentualSujas: salasAtivas.length > 0 ? Math.round((salasAtivas.filter(s => s.status_limpeza === 'Suja').length / salasAtivas.length) * 100) : 0,
+    percentualPendentes: salasAtivas.length > 0 ? Math.round((salasAtivas.filter(s => s.status_limpeza === 'Limpeza Pendente').length / salasAtivas.length) * 100) : 0,
+    percentualEmLimpeza: salasAtivas.length > 0 ? Math.round((salasAtivas.filter(s => s.status_limpeza === 'Em Limpeza').length / salasAtivas.length) * 100) : 0
   };
 
   return (
@@ -333,6 +404,135 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
             </View>
           </TouchableOpacity>
 
+          {/* Card de Limpeza em Andamento  */}
+          {isZelador(user, groups) && limpezaEmAndamento && dadosLimpeza && (
+            <View className={`p-5 rounded-3xl mb-6 border-2 ${
+              isDarkMode ? 'bg-orange-900/30 border-orange-500/50' : 'bg-orange-50 border-orange-300'
+            }`}>
+              <View className="flex-row items-center mb-4">
+                <View className={`w-12 h-12 rounded-full items-center justify-center ${
+                  isDarkMode ? 'bg-orange-500/20' : 'bg-orange-500/30'
+                }`}>
+                  <Activity size={24} color="#F97316" />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Text className={`text-lg font-bold ${
+                    isDarkMode ? 'text-orange-200' : 'text-orange-900'
+                  }`}>
+                    Limpeza em Andamento
+                  </Text>
+                  <Text className={`text-sm ${
+                    isDarkMode ? 'text-orange-300' : 'text-orange-700'
+                  }`}>
+                    Você tem uma limpeza não finalizada
+                  </Text>
+                </View>
+              </View>
+              
+              <View className={`p-3 rounded-xl mb-3 ${
+                isDarkMode ? 'bg-orange-800/30' : 'bg-orange-100'
+              }`}>
+                <View className="flex-row items-center mb-1">
+                  <Building size={16} color="#F97316" />
+                  <Text className={`ml-2 text-sm font-semibold ${
+                    isDarkMode ? 'text-orange-200' : 'text-orange-800'
+                  }`}>
+                    {dadosLimpeza.salaNome}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <Clock size={16} color="#F97316" />
+                  <Text className={`ml-2 text-xs ${
+                    isDarkMode ? 'text-orange-300' : 'text-orange-700'
+                  }`}>
+                    Iniciada em: {new Date(dadosLimpeza.inicioLimpeza).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={navigateToLimpezaEmAndamento}
+                className={`p-4 rounded-xl flex-row items-center justify-center ${
+                  isDarkMode ? 'bg-orange-600' : 'bg-orange-500'
+                }`}
+                activeOpacity={0.7}
+              >
+                <PlayCircle size={20} color="white" />
+                <Text className="ml-2 text-white text-base font-semibold">
+                  Retomar Limpeza
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Estatísticas do Zelador - Para todos os zeladores (incluindo admins) */}
+          {isZelador(user, groups) && (
+            <View className="mb-8">
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center">
+                  <Award size={24} color={SENAC_COLORS.primary} />
+                  <Text className={`text-xl font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Minhas Estatísticas
+                  </Text>
+                </View>
+              </View>
+
+              {/* Card com Estatísticas do Zelador */}
+              <View className={`p-5 rounded-3xl mb-4 ${
+                isDarkMode ? 'bg-gray-800/50' : 'bg-white/80'
+              } ${isDarkMode ? 'border border-gray-700' : 'border border-gray-200'}`}>
+                
+                {/* Contador de Salas Limpas */}
+                <View className="flex-row items-center justify-between mb-4">
+                  <View className="flex-1">
+                    <View className="flex-row items-center mb-2">
+                      <View className={`w-12 h-12 rounded-full items-center justify-center`}
+                           style={{ backgroundColor: `${SENAC_COLORS.primary}20` }}>
+                        <CheckCircle size={24} color={SENAC_COLORS.primary} />
+                      </View>
+                      <View className="ml-3 flex-1">
+                        <Text className={`text-xs font-medium ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          LIMPEZAS REALIZADAS
+                        </Text>
+                        <Text className={`text-3xl font-bold ${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {isLoadingRegistros ? '...' : salasLimpasPorZelador}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className={`text-sm ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      Total de salas limpas por você
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Botão para Ver Histórico */}
+                <TouchableOpacity
+                  onPress={navigateToHistoricoLimpeza}
+                  className={`p-4 rounded-xl flex-row items-center justify-center ${
+                    isDarkMode ? 'bg-blue-600' : 'bg-blue-500'
+                  }`}
+                  activeOpacity={0.7}
+                >
+                  <History size={20} color="white" />
+                  <Text className="ml-2 text-white text-base font-semibold">
+                    Ver Meu Histórico de Limpezas
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Estatísticas Principais */}
           <View className="mb-8">
@@ -340,12 +540,14 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
                <View className="flex-row items-center">
                  <BarChart3 size={24} color={SENAC_COLORS.primary} />
                  <Text className={`text-xl font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                   Dashboard de Salas
+                   {isAdmin(user) 
+                     ? 'Dashboard Geral de Salas' 
+                     : 'Dashboard de Salas'}
                  </Text>
                </View>
             </View>
             
-              {/* Cards de Estatísticas - Layout Vertical */}
+              {/* Cards de Estatísticas */}
               <View className="gap-4 mb-3">
                 {/* Card TOTAL */}
                 <View className={`p-4 rounded-2xl ${

@@ -96,6 +96,7 @@ export const LimpezaRegistroSchema = z.object({
   sala_nome: z.string(),
   data_hora_limpeza: z.string(),
   data_hora_inicio: z.string().optional(),
+  data_hora_fim: z.string().optional(),
   funcionario_responsavel: z.object({
     id: z.number(),
     username: z.string(),
