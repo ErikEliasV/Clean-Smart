@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Plus, X } from 'lucide-react-native';
 import { useAuth, canManageSalas, isAdmin } from '../contexts/AuthContext';
 import { useGroups } from '../contexts/GroupsContext';
@@ -79,6 +80,13 @@ const SalasScreen: React.FC<SalasScreenProps> = ({ navigation }) => {
   useEffect(() => {
     loadSalas();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('📱 SalasScreen ganhou foco - Recarregando salas...');
+      loadSalas();
+    }, [])
+  );
 
   useEffect(() => {
     if (limpezaEmAndamento && dadosLimpeza) {

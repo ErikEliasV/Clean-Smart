@@ -3,6 +3,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   Alert,
   RefreshControl,
@@ -13,9 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, Filter, Calendar, User, MapPin, Clock, Camera } from 'lucide-react-native';
-import { useAuth, canViewAllSalas } from '../contexts/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { ChevronLeft, Filter, Calendar, User, MapPin, Clock, Camera, PlayCircle, Activity, AlertCircle } from 'lucide-react-native';
+import { useAuth, canViewAllSalas, isAdmin, isZelador } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
+import { useGroups } from '../contexts/GroupsContext';
+import { useLimpeza } from '../contexts/LimpezaContext';
 import { LimpezaRegistro, Sala } from '../schemas';
 import { SENAC_COLORS } from '../constants/colors';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -26,7 +30,11 @@ type RegistrosLimpezaScreenProps = StackScreenProps<SalasStackParamList, 'Regist
 const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigation, route }) => {
   const { isDarkMode, user } = useAuth();
   const { listRegistrosLimpeza, salas } = useSalas();
+  const { groups } = useGroups();
+  const { iniciarProcessoLimpeza } = useLimpeza();
   const [registros, setRegistros] = useState<LimpezaRegistro[]>([]);
+  const [registrosEmAndamento, setRegistrosEmAndamento] = useState<LimpezaRegistro[]>([]);
+  const [registrosConcluidos, setRegistrosConcluidos] = useState<LimpezaRegistro[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSalaId, setSelectedSalaId] = useState<number | undefined>(undefined);
@@ -39,8 +47,15 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
     }
   }, [route?.params?.salaId, salas]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('📱 RegistrosLimpezaScreen ganhou foco - Recarregando dados...');
+      loadRegistros(selectedSalaId);
+    }, [selectedSalaId])
+  );
+
   const loadRegistros = async (salaId?: number) => {
-    if (!canViewAllSalas(user)) {
+    if (!canViewAllSalas(user, groups)) {
       Alert.alert('Erro', 'Você não tem permissão para acessar os registros de limpeza');
       navigation.goBack();
       return;
@@ -79,6 +94,26 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
         
         console.log('Registros mapeados e filtrados:', registrosMapeados);
         setRegistros(registrosMapeados);
+
+        const emAndamento = registrosMapeados.filter((registro: any) => 
+          registro.data_hora_inicio && !registro.data_hora_fim
+        );
+        const concluidos = registrosMapeados.filter((registro: any) => 
+          registro.data_hora_fim
+        );
+        
+        console.log('=== DEBUG LIMPEZAS EM ANDAMENTO ===');
+        console.log('Registros em andamento:', emAndamento.length);
+        console.log('Registros em andamento (detalhes):', emAndamento);
+        console.log('Registros concluídos:', concluidos.length);
+        console.log('Usuário é admin?', isAdmin(user));
+        console.log('Usuário é zelador?', isZelador(user, groups));
+        console.log('Groups:', groups);
+        console.log('User groups:', user?.groups);
+        console.log('Condição para mostrar cards:', emAndamento.length > 0 && isZelador(user, groups));
+        
+        setRegistrosEmAndamento(emAndamento);
+        setRegistrosConcluidos(concluidos);
       } else {
         console.log('Erro ao carregar registros:', result.error);
         Alert.alert('Erro', result.error || 'Erro ao carregar registros');
@@ -96,10 +131,6 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
     await loadRegistros(selectedSalaId);
     setRefreshing(false);
   };
-
-  useEffect(() => {
-    loadRegistros(selectedSalaId);
-  }, []);
 
   useEffect(() => {
     if (selectedSalaId !== undefined) {
@@ -145,6 +176,100 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
     if (imageUrl.startsWith('/')) return `https://zeladoria.tsr.net.br${imageUrl}`;
     return `https://zeladoria.tsr.net.br/${imageUrl}`;
   };
+
+  const handleRetomarLimpeza = async (registro: LimpezaRegistro) => {
+    try {
+      const sala = salas.find(s => s.id === registro.sala);
+      const salaQrCodeId = sala?.qr_code_id || registro.sala.toString();
+
+      await iniciarProcessoLimpeza(
+        salaQrCodeId,
+        registro.sala_nome || 'Sala',
+        registro.id
+      );
+
+      navigation.navigate('LimpezaProcesso', {
+        salaId: salaQrCodeId,
+        salaNome: registro.sala_nome || 'Sala',
+        qrCodeScanned: false
+      });
+    } catch (error) {
+      console.error('Erro ao retomar limpeza:', error);
+      Alert.alert('Erro', 'Não foi possível retomar a limpeza');
+    }
+  };
+
+  const renderRegistroEmAndamento = ({ item }: { item: LimpezaRegistro }) => (
+    <View className={`mt-4 mx-4 mb-3 p-4 rounded-xl border-2 ${
+      isDarkMode ? 'bg-orange-900/30 border-orange-500/50' : 'bg-orange-50 border-orange-300'
+    } shadow-sm`}>
+      <View className="flex-row items-center mb-3">
+        <View className={`w-10 h-10 rounded-full items-center justify-center ${
+          isDarkMode ? 'bg-orange-500/20' : 'bg-orange-500/30'
+        }`}>
+          <Activity size={20} color="#F97316" />
+        </View>
+        <View className="flex-1 ml-3">
+          <Text className={`text-base font-bold ${
+            isDarkMode ? 'text-orange-200' : 'text-orange-900'
+          }`}>
+            Limpeza em Andamento
+          </Text>
+          <Text className={`text-xs ${
+            isDarkMode ? 'text-orange-300' : 'text-orange-700'
+          }`}>
+            Toque para retomar
+          </Text>
+        </View>
+      </View>
+
+      <View className={`p-3 rounded-lg mb-3 ${
+        isDarkMode ? 'bg-orange-800/30' : 'bg-orange-100'
+      }`}>
+        <View className="flex-row items-center mb-2">
+          <MapPin size={16} color="#F97316" />
+          <Text className={`ml-2 text-sm font-semibold ${
+            isDarkMode ? 'text-orange-200' : 'text-orange-800'
+          }`}>
+            {item.sala_nome}
+          </Text>
+        </View>
+        
+        {item.data_hora_inicio && (
+          <View className="flex-row items-center mb-1">
+            <Clock size={16} color="#F97316" />
+            <Text className={`ml-2 text-xs ${
+              isDarkMode ? 'text-orange-300' : 'text-orange-700'
+            }`}>
+              Iniciada em: {formatDateTime(item.data_hora_inicio)}
+            </Text>
+          </View>
+        )}
+
+        <View className="flex-row items-center">
+          <User size={16} color="#F97316" />
+          <Text className={`ml-2 text-xs ${
+            isDarkMode ? 'text-orange-300' : 'text-orange-700'
+          }`}>
+            {item.funcionario_responsavel?.username || 'Funcionário não informado'}
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        onPress={() => handleRetomarLimpeza(item)}
+        className={`p-3 rounded-xl flex-row items-center justify-center ${
+          isDarkMode ? 'bg-orange-600' : 'bg-orange-500'
+        }`}
+        activeOpacity={0.7}
+      >
+        <PlayCircle size={18} color="white" />
+        <Text className="ml-2 text-white text-sm font-semibold">
+          Retomar Limpeza
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const renderRegistro = ({ item }: { item: LimpezaRegistro }) => (
     <View className={`mt-4 mx-4 mb-3 p-4 rounded-xl ${
@@ -352,10 +477,7 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={registros}
-          renderItem={renderRegistro}
-          keyExtractor={(item) => item.id.toString()}
+        <ScrollView
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -364,7 +486,53 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
               tintColor={SENAC_COLORS.primary}
             />
           }
-          ListEmptyComponent={
+          contentContainerStyle={{ paddingBottom: 20 }}
+        >
+          {/* Limpezas em Andamento */}
+          {registrosEmAndamento.length > 0 && isZelador(user, groups) && (
+            <>
+              <View className={`mx-4 mt-4 mb-2 flex-row items-center ${
+                isDarkMode ? 'bg-orange-900/20' : 'bg-orange-50'
+              } p-3 rounded-xl`}>
+                <AlertCircle size={20} color="#F97316" />
+                <Text className={`ml-2 text-sm font-semibold ${
+                  isDarkMode ? 'text-orange-200' : 'text-orange-800'
+                }`}>
+                  {registrosEmAndamento.length} Limpeza(s) em Andamento
+                </Text>
+              </View>
+              {registrosEmAndamento.map((registro) => (
+                <View key={registro.id}>
+                  {renderRegistroEmAndamento({ item: registro })}
+                </View>
+              ))}
+            </>
+          )}
+
+          {/* Limpezas Concluídas */}
+          {registrosConcluidos.length > 0 && (
+            <>
+              {registrosEmAndamento.length > 0 && isZelador(user, groups) && (
+                <View className={`mx-4 mt-4 mb-2 flex-row items-center ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
+                } p-3 rounded-xl`}>
+                  <Text className={`text-sm font-semibold ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Limpezas Concluídas
+                  </Text>
+                </View>
+              )}
+              {registrosConcluidos.map((registro) => (
+                <View key={registro.id}>
+                  {renderRegistro({ item: registro })}
+                </View>
+              ))}
+            </>
+          )}
+
+          {/* Mensagem quando não há registros */}
+          {registros.length === 0 && (
             <View className="flex-1 justify-center items-center py-8">
               <Text className={`text-lg font-medium ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-600'
@@ -380,9 +548,8 @@ const RegistrosLimpezaScreen: React.FC<RegistrosLimpezaScreenProps> = ({ navigat
                 }
               </Text>
             </View>
-          }
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
+          )}
+        </ScrollView>
       )}
 
       <Modal
