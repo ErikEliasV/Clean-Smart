@@ -7,7 +7,7 @@ O ***CleanSmart*** é um aplicativo desenvolvido em ***React Native*** com ***Ex
 Para baixar o projeto, utilize o comando:
 
 ```bash
-git clone https://github.com/ErikEliasV/Zela-senac.git
+https://github.com/ErikEliasV/Clean-Smart.git
 cd Zela-senac
 ```
 
