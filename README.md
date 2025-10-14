@@ -20,12 +20,17 @@ cd Zela-senac
 
 2. ***Inicie o projeto:***
    ```bash
-   npx expo start
+   npm run start
    ```
-
-3. ***Para rodar no celular usando o Expo Go:***
+   
+3. ***Para iniciar projeto, e rondar no Expo Go::***
    ```bash
-   npx expo start --tunnel
+   npm run dev
+   ```   
+
+4. ***Para testar erro de build:***
+   ```bash
+   npm run build
    ```
 
 ## 📦 Requisitos
