@@ -116,7 +116,6 @@ const InformationScreen: React.FC = () => {
       const salasAtivas = salas.filter(s => s.ativa !== false);
       const salasInativas = salas.filter(s => !s.ativa);
       
-      // Usar o template externo
       const html = generatePDFTemplate({
         salas,
         salasAtivas,
