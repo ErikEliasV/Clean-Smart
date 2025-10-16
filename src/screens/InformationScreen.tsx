@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Svg, { Circle, Path, G } from 'react-native-svg';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { generatePDFTemplate } from '../templates/pdfReportTemplate';
 import { useAuth, isAdmin, isZelador, isCorpoDocente } from '../contexts/AuthContext';
 import { useSalas } from '../contexts/SalasContext';
 import { useLimpeza } from '../contexts/LimpezaContext';
@@ -36,7 +39,9 @@ import {
   CheckCircle2,
   History,
   PlayCircle,
-  Award
+  Award,
+  Download,
+  FileText
 } from 'lucide-react-native';
 import { SENAC_COLORS } from '../constants/colors';
 
@@ -52,6 +57,7 @@ const InformationScreen: React.FC = () => {
   const { alertVisible, alertOptions, showAlert, hideAlert } = useCustomAlert();
   const [salasLimpasPorZelador, setSalasLimpasPorZelador] = useState(0);
   const [isLoadingRegistros, setIsLoadingRegistros] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     loadSalasData();
@@ -91,6 +97,63 @@ const InformationScreen: React.FC = () => {
       console.error('Erro ao carregar estatísticas do zelador:', error);
     } finally {
       setIsLoadingRegistros(false);
+    }
+  };
+
+  const generatePDFReport = async () => {
+    if (!isAdmin(user)) {
+      showAlert({
+        title: 'Acesso Negado',
+        message: 'Apenas administradores podem gerar relatórios em PDF.',
+        type: 'error',
+        confirmText: 'OK'
+      });
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+    try {
+      const salasAtivas = salas.filter(s => s.ativa !== false);
+      const salasInativas = salas.filter(s => !s.ativa);
+      
+      // Usar o template externo
+      const html = generatePDFTemplate({
+        salas,
+        salasAtivas,
+        salasInativas,
+        salasStats,
+        user
+      });
+
+      const { uri } = await Print.printToFileAsync({ 
+        html,
+        base64: false 
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Compartilhar Relatório de Salas'
+        });
+      } else {
+        showAlert({
+          title: 'PDF Gerado',
+          message: 'O relatório foi gerado com sucesso!',
+          type: 'success',
+          confirmText: 'OK'
+        });
+      }
+
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      showAlert({
+        title: 'Erro',
+        message: 'Erro ao gerar o relatório em PDF. Tente novamente.',
+        type: 'error',
+        confirmText: 'OK'
+      });
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -536,7 +599,7 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
 
           {/* Estatísticas Principais */}
           <View className="mb-8">
-            <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center mb-6">
                <View className="flex-row items-center">
                  <BarChart3 size={24} color={SENAC_COLORS.primary} />
                  <Text className={`text-xl font-bold ml-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -693,6 +756,30 @@ const PieChartComponent = ({ data, isDarkMode }: { data: { label: string; value:
                   </Text>
                 </View>
               </View>
+              
+              {/* Botão de Download PDF */}
+              {isAdmin(user) && (
+                <View className="mt-6">
+                  <TouchableOpacity
+                    onPress={generatePDFReport}
+                    disabled={isGeneratingPDF}
+                    className={`flex-row items-center justify-center px-6 py-4 rounded-2xl ${
+                      isGeneratingPDF ? 'opacity-50' : ''
+                    }`}
+                    style={{ backgroundColor: SENAC_COLORS.primary }}
+                    activeOpacity={0.7}
+                  >
+                    {isGeneratingPDF ? (
+                      <ActivityIndicator size={20} color="white" />
+                    ) : (
+                      <Download size={20} color="white" />
+                    )}
+                    <Text className="text-white font-semibold ml-3 text-base">
+                      {isGeneratingPDF ? 'Gerando Relatório...' : 'Baixar Relatório PDF'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
           </View>
 
           {/* Gráficos Visuais */}
