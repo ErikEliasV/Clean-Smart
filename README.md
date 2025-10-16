@@ -2,6 +2,19 @@
 
 O ***CleanSmart*** é um aplicativo desenvolvido em ***React Native*** com ***Expo*** para auxiliar a equipe de ***zeladoria do Senac*** no gerenciamento de salas, tarefas e rotinas de limpeza.
 
+## 🛠️ Tecnologias Utilizadas
+
+- **React Native** - Framework para desenvolvimento mobile
+- **Expo** - Plataforma para desenvolvimento React Native
+- **TypeScript** - Linguagem de programação tipada
+- **NativeWind** - Framework CSS para React Native
+- **Tailwind CSS** - Framework de utilitários CSS
+- **React Navigation** - Navegação entre telas
+- **Zod** - Validação de schemas
+- **AsyncStorage** - Armazenamento local
+- **Expo Camera** - Funcionalidades de câmera
+- **Expo Barcode Scanner** - Leitura de códigos QR
+
 ## 📥 Clonando o repositório
 
 Para baixar o projeto, utilize o comando:
@@ -11,40 +24,121 @@ https://github.com/ErikEliasV/Clean-Smart.git
 cd Zela-senac
 ```
 
-## 🚀 Como rodar o projeto
+## 🚀 Como Executar o Projeto
 
-1. ***Instale as dependências:***
-   ```bash
-   npm install
-   ```
+### Pré-requisitos
 
-2. ***Inicie o projeto:***
-   ```bash
-   npm run start
-   ```
-   
-3. ***Para iniciar projeto, e rondar no Expo Go::***
-   ```bash
-   npm run dev
-   ```   
+- Node.js (versão 18 ou superior)
+- npm ou yarn
+- Expo CLI
+- Dispositivo móvel com Expo Go ou emulador
 
-4. ***Para testar erro de build:***
-   ```bash
-   npm run build
-   ```
+### Instalação
 
-## 📦 Requisitos
+1. Clone o repositório:
+```bash
+git clone <url-do-repositorio>
+cd zela-senac
+```
 
-- ***Node.js*** instalado
-- ***NPM*** instalado  
-- ***Expo CLI*** (instalado automaticamente ao usar `npx`)
+2. Instale as dependências:
+```bash
+npm install
+```
 
-## 📱 Como usar
+3. Inicie o projeto:
+```bash
+npm start
+```
 
-1. Baixe o aplicativo ***Expo Go*** na Play Store ou App Store
-2. Execute `npx expo start --tunnel` no terminal
-3. Escaneie o QR Code com o ***Expo Go*** (Android) ou câmera (iOS)
-4. O aplicativo será carregado no seu dispositivo
+### Scripts Disponíveis
+
+- `npm start` - Inicia o servidor de desenvolvimento
+- `npm run dev` - Inicia com túnel para acesso externo
+- `npm run build` - Verifica tipos e lint antes do build
+- `npm run type-check` - Verifica tipos TypeScript
+- `npm run lint-check` - Verifica dependências
+
+
+
+## 📁 Estrutura do Projeto
+
+```
+zela-senac/
+├── 📁 assets/                          # Recursos estáticos
+│   ├── adaptive-icon.png               # Ícone adaptativo para Android
+│   ├── favicon.png                     # Favicon para web
+│   ├── icon.png                        # Ícone principal do app
+│   ├── splash-icon.png                 # Ícone da tela de splash
+│   └── 📁 images/                      # Imagens do projeto
+│       ├── logo_invert.png             # Logo invertido
+│       ├── logo_name.png               # Logo com nome
+│       └── logo.png                    # Logo principal
+│
+├── 📁 src/                             # Código fonte principal
+│   ├── 📁 components/                  # Componentes reutilizáveis
+│   │   ├── ActionSelectionModal.tsx    # Modal de seleção de ações
+│   │   ├── CustomAlert.tsx             # Componente de alerta customizado
+│   │   ├── MarcarSujaModal.tsx         # Modal para marcar sala como suja
+│   │   ├── ProfileImagePicker.tsx      # Seletor de imagem de perfil
+│   │   ├── SalaCard.tsx                # Card de exibição de sala
+│   │   ├── SalaForm.tsx                # Formulário de sala
+│   │   ├── SalaLimpaModal.tsx          # Modal para marcar sala como limpa
+│   │   └── Sidebar.tsx                 # Barra lateral de navegação
+│   │
+│   ├── 📁 constants/                   # Constantes do projeto
+│   │   └── colors.ts                   # Definições de cores
+│   │
+│   ├── 📁 contexts/                    # Contextos React (Estado global)
+│   │   ├── AuthContext.tsx             # Contexto de autenticação
+│   │   ├── BottomTabsContext.tsx       # Contexto das abas inferiores
+│   │   ├── GroupsContext.tsx           # Contexto de grupos
+│   │   ├── LimpezaContext.tsx          # Contexto de limpeza
+│   │   ├── NotificationsContext.tsx    # Contexto de notificações
+│   │   ├── QRCodeContext.tsx           # Contexto de códigos QR
+│   │   └── SalasContext.tsx            # Contexto de salas
+│   │
+│   ├── 📁 hooks/                       # Hooks customizados
+│   │   ├── useCustomAlert.ts           # Hook para alertas customizados
+│   │   ├── useFormValidation.ts        # Hook para validação de formulários
+│   │   ├── useResponsive.ts            # Hook para responsividade
+│   │   └── useTokenError.ts            # Hook para tratamento de erros de token
+│   │
+│   ├── 📁 navigation/                  # Configuração de navegação
+│   │   └── AppNavigator.tsx            # Navegador principal da aplicação
+│   │
+│   ├── 📁 schemas/                     # Schemas de validação
+│   │   └── index.ts                    # Schemas Zod para validação
+│   │
+│   ├── 📁 screens/                     # Telas da aplicação
+│   │   ├── ChangePasswordScreen.tsx    # Tela de alteração de senha
+│   │   ├── InformationScreen.tsx       # Tela de informações
+│   │   ├── LimpezaProcessoScreen.tsx   # Tela do processo de limpeza
+│   │   ├── LoginScreen.tsx             # Tela de login
+│   │   ├── NotificationsScreen.tsx     # Tela de notificações
+│   │   ├── ProfileScreen.tsx           # Tela de perfil do usuário
+│   │   ├── RegistrosLimpezaScreen.tsx  # Tela de registros de limpeza
+│   │   ├── SalasScreen.tsx             # Tela de gerenciamento de salas
+│   │   ├── SettingsScreen.tsx          # Tela de configurações
+│   │   └── UserManagementScreen.tsx    # Tela de gerenciamento de usuários
+│   │
+│   ├── 📁 types/                       # Definições de tipos TypeScript
+│   │   └── navigation.ts               # Tipos para navegação
+│   │
+│   └── 📁 utils/                       # Utilitários e funções auxiliares
+│       └── (vazio)                     # Pasta para futuras funções utilitárias
+│
+├── 📄 App.tsx                          # Componente raiz da aplicação
+├── 📄 app.json                         # Configuração do Expo
+├── 📄 babel.config.js                  # Configuração do Babel
+├── 📄 global.css                       # Estilos globais
+├── 📄 index.ts                         # Ponto de entrada da aplicação
+├── 📄 metro.config.js                  # Configuração do Metro bundler
+├── 📄 nativewind-env.d.ts              # Definições de tipos do NativeWind
+├── 📄 package.json                     # Dependências e scripts do projeto
+├── 📄 tailwind.config.js               # Configuração do Tailwind CSS
+└── 📄 tsconfig.json                    # Configuração do TypeScript
+```   
 
 ## 🛜 Repsitorio da API
 
@@ -54,6 +148,13 @@ cd Zela-senac
 
 ## 🛠️ Tecnologias utilizadas
 
-- ***React Native***
-- ***Expo***
-- ***JavaScript/TypeScript***
+- **React Native** - Framework para desenvolvimento mobile
+- **Expo** - Plataforma para desenvolvimento React Native
+- **TypeScript** - Linguagem de programação tipada
+- **NativeWind** - Framework CSS para React Native
+- **Tailwind CSS** - Framework de utilitários CSS
+- **React Navigation** - Navegação entre telas
+- **Zod** - Validação de schemas
+- **AsyncStorage** - Armazenamento local
+- **Expo Camera** - Funcionalidades de câmera
+- **Expo Barcode Scanner** - Leitura de códigos QRx
