@@ -124,9 +124,6 @@ zela-senac/
 │   │
 │   ├── 📁 types/                       # Definições de tipos TypeScript
 │   │   └── navigation.ts               # Tipos para navegação
-│   │
-│   └── 📁 utils/                       # Utilitários e funções auxiliares
-│       └── (vazio)                     # Pasta para futuras funções utilitárias
 │
 ├── 📄 App.tsx                          # Componente raiz da aplicação
 ├── 📄 app.json                         # Configuração do Expo
